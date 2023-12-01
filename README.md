@@ -1,13 +1,14 @@
 # pwSEM
-An R package to impliment my new piecewise SEM function called pwSEM
+An R package to impliment my new piecewise SEM function called pwSEM. This supports and combination linear, generalized linear, generalized linear mixed models as well as additive, generalized additive, generalized additive mixed models.  The ability to use (generalized) additive (mixed) models to test the d-separation claims is also supported.
 
 Installation
 
 First, make sure that you have the latest version of R on your computer, or at least a very recent version. To install the package from GitHub, type the following commands in your R or RStudio console:
 
 # install package dependencies first
-install.packages("lavaan")
 install.packages("ggm")
+install.packages("gamm4")
+install.packages("mgcv")
 
 # install and load devtools to be able to install packages from GitHub with install_github
 install.packages("devtools")
