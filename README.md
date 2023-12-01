@@ -14,7 +14,7 @@ install.packages("mgcv")
 install.packages("devtools")
 library(devtools)
 
-# install CauseAndCorrelation from Bill's GitHub
+# install pwSEM from Bill's GitHub
 install_github("BillShipley/pwSEM")
 library(pwSEM)
 ?pwSEM
