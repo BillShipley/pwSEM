@@ -8,7 +8,7 @@ First, make sure that you have the latest version of R on your computer, or at l
 # install package dependencies first
 install.packages("ggm") 
 install.packages("gamm4") 
-install.packages("mgcv")
+install.packages("mgcv") 
 
 # install and load devtools to be able to install packages from GitHub with install_github
 install.packages("devtools")
