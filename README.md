@@ -11,7 +11,7 @@ install.packages("devtools")
 library(devtools)
 
 # install pwSEM from Bill's GitHub
-install_github("BillShipley/pwSEM")
+install_github("BillShipley/pwSEM",dependencies=TRUE,build_vignettes=TRUE)
 
 library(pwSEM)
 
