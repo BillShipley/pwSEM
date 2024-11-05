@@ -226,6 +226,7 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
   new.sems<-get.unbiased.sems(sem.functions=sem.functions,mag=mag,
       equivalent.mag=equivalent.mag,dat=data,
       all.grouping.vars=all.grouping.vars)
+
 #  sem.functions<-new.sems$sem.functions
   AIC.out<-get.AIC(sem.model=new.sems$sem.functions,
                           MAG=equivalent.mag,data=data)
@@ -257,7 +258,7 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
 
 get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
                             dat,all.grouping.vars){
-#This function refits the sem.functions to agree with the
+#This function refits the sem functions to agree with the
 #equivalent graph model form and then calculates values for
 #dependent errors:
 #variance & Pearson r if all are normal and not mixed models; else
@@ -292,7 +293,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
   equivalent.mag2[equivalent.mag==100]<-0
   equivalent.mag2[equivalent.mag==10]<-0
 
-#This holds the response residuals for each variable
+#This will hold the response residuals for each variable
   residual.values<-matrix(NA,ncol=ncol,nrow=nobs,
         dimnames=list(as.character(1:nobs),var.names[[1]]))
   sem.modified<-rep("no",ncol)
@@ -398,12 +399,11 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
   if(!is.normal){
     spearman.matrix<-stats::cor(residual.values,method="spearman")
   }
-
 #If all data are normal, get the standardized coefficients
   standardized.sem.functions<-sem.functions
   if(is.normal & !is.mixed){
     no.match<-!(1:dim(dat)[2])%in%match(var.names[[1]],names(dat))
-    #datA holds the scaled values for the variables in the MAG
+    #data holds the scaled values for the variables in the MAG
     datA<-data.frame(scale(dat[,match(var.names[[1]],names(dat))]))
     datB<-dat[,no.match]
     #dat2 holds the scaled values for the variables in the MAG plus
@@ -417,7 +417,6 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
     }
   }
   if(!is.normal | is.mixed)standardized.sem.functions<-NULL
-
   list(sem.functions=sem.functions,residuals=residual.values,
     covariance.matrix=cov.matrix,pearson.matrix=pearson.matrix,
     spearman.matrix=spearman.matrix,sem.modified=sem.modified,
@@ -491,7 +490,7 @@ is.family.normal<-function(sem.functions){
   # variables; else returns FALSE
   flag<-TRUE
   #CHECK that this holds for both gam and gamm4
-  for(i in length(sem.functions)){
+  for(i in 1:length(sem.functions)){
     if(inherits(sem.functions[i][[1]],"gam")){
       if(sem.functions[i][[1]]$family$family!="gaussian"){
         flag<-FALSE
