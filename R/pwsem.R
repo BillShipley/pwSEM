@@ -1390,8 +1390,9 @@ prob.distribution.for.copula<-function(fun,data){
       return(prob)
     }
   else
-  if(fam$family=="gamma"){
+  if(fam$family=="Gamma"){
     disp1 <- (fun$scale)
+    if(any(fun$y<0))stop("Negative values in Gamma-distributed variable")
     prob <- stats::pgamma(fun$y,scale=predict(fun,type="response")*disp1,
                              shape=1/disp1)
     return(prob)
@@ -1405,18 +1406,18 @@ prob.distribution.for.copula<-function(fun,data){
                  phi = exp(fun$family$getTheta()))
     }
     else
-     x<-fun$family
-      x<-substr(x,start=1,stop=17)
-      if(x[1]=="Negative Binomial"){
+    x<-fun$family
+    x<-substr(x,start=1,stop=17)
+    if(x[1]=="Negative Binomial"){
         prob<-stats::pnbinom(q=fun$y,size=exp(fun$family$getTheta()),
                            mu=predict(fun,type="response"))
-        return(prob)
-      }
+       return(prob)
+    }
   else
-    print(cat("The AIC function does not support the family:",fam$family))
-    #The family isn't supported here, so return NAs
-    prob<-rep(NA,length(predict(fun)))
-    return(prob)
+  print(cat("The AIC function does not support the family:",fam$family))
+  #The family isn't supported here, so return NAs
+  prob<-rep(NA,length(predict(fun)))
+  return(prob)
 }
 
 get.AIC<-function(sem.model,MAG,data){
