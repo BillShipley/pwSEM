@@ -177,8 +177,6 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
     #This adds free covariances to the adjacency matrix as "100"
     mag<-add.marginalized.latents(DAG=dag,marginalized.latents=marginalized.latents)
     no.latents<-FALSE
-    print("the mag but not the equivalent mag")
-    print(mag)
   }
   if(is.null(marginalized.latents) & !is.null(conditioned.latents))mag<-dag
   if(is.null(conditioned.latents))temp<-NULL
@@ -190,8 +188,6 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
   }
   x2<-MAG.to.DAG.in.pwSEM(mag,marginalized.latents=marginalized.latents,
                           conditioned.latents=conditioned.latents)
-  print("after MAG.to.DAG.in.pwSEM, here is the result")
-  print(x2)
   #This gets the names of the latent variables that have been
   #added in the extended DAG (x2) to represent the free covariances
   latents<-extract.latents(dag.with.latents=x2,
@@ -947,7 +943,11 @@ add.conditioned.latents<-function(DAG,marginalized.latents,conditioned.latents){
 #' function of th ggm library, with  0/1 for the directed paths,
 #' 100 for marginalized latents and 10 for conditioned latents.
 #'
-#' @param x a MAG input as a matrix
+#' @param MAG a MAG input as a matrix
+#' @param marginalized.latents a list containing pairs of variables that share
+#' a common latent marginalized cause; eg list(X2~~X3, X4~~X5)
+#' @param conditioned.latents a list containing pairs of variables that cause
+#' a common latent conditioned cause; eg list(X2~~X3, X4~~X5)
 #'
 #' @return A binary matrix of 0/1 values representing the DAG produced
 #' by adding the latent variables (shown as L1, L2 etc)

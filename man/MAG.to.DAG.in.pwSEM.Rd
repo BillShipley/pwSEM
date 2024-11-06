@@ -4,10 +4,16 @@
 \alias{MAG.to.DAG.in.pwSEM}
 \title{MAG.to.DAG.in.pwSEM}
 \usage{
-MAG.to.DAG.in.pwSEM(x)
+MAG.to.DAG.in.pwSEM(MAG, marginalized.latents, conditioned.latents)
 }
 \arguments{
-\item{x}{a MAG input as a matrix}
+\item{MAG}{a MAG input as a matrix}
+
+\item{marginalized.latents}{a list containing pairs of variables that share
+a common latent marginalized cause; eg list(X2~~X3, X4~~X5)}
+
+\item{conditioned.latents}{a list containing pairs of variables that cause
+a common latent conditioned cause; eg list(X2~~X3, X4~~X5)}
 }
 \value{
 A binary matrix of 0/1 values representing the DAG produced
@@ -21,6 +27,7 @@ function of th ggm library, with  0/1 for the directed paths,
 \examples{
 library(ggm)
 my.mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
-DAG.with.latent<-MAG.to.DAG.in.pwSEM(my.mag)
+DAG.with.latent<-MAG.to.DAG.in.pwSEM(my.mag,
+marginalized.latents=list(X2~~X4),conditioned.latents=NULL)
 
 }
