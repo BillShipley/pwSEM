@@ -177,6 +177,8 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
     #This adds free covariances to the adjacency matrix as "100"
     mag<-add.marginalized.latents(DAG=dag,marginalized.latents=marginalized.latents)
     no.latents<-FALSE
+    print("the mag but not the equivalent mag")
+    print(mag)
   }
   if(is.null(marginalized.latents) & !is.null(conditioned.latents))mag<-dag
   if(is.null(conditioned.latents))temp<-NULL
@@ -186,7 +188,10 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
     mag<-temp$MAG
     no.latents<-FALSE
   }
-  x2<-MAG.to.DAG.in.pwSEM(mag)
+  x2<-MAG.to.DAG.in.pwSEM(mag,marginalized.latents=marginalized.latents,
+                          conditioned.latents=conditioned.latents)
+  print("after MAG.to.DAG.in.pwSEM, here is the result")
+  print(x2)
   #This gets the names of the latent variables that have been
   #added in the extended DAG (x2) to represent the free covariances
   latents<-extract.latents(dag.with.latents=x2,
@@ -952,72 +957,68 @@ add.conditioned.latents<-function(DAG,marginalized.latents,conditioned.latents){
 #' @examples
 #' library(ggm)
 #' my.mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
-#' DAG.with.latent<-MAG.to.DAG.in.pwSEM(my.mag)
+#' DAG.with.latent<-MAG.to.DAG.in.pwSEM(my.mag,
+#' marginalized.latents=list(X2~~X4),conditioned.latents=NULL)
 #'
-MAG.to.DAG.in.pwSEM<-function(x){
+MAG.to.DAG.in.pwSEM<-function(MAG,marginalized.latents,conditioned.latents){
   #returns a DAG with latents from a MAG without latents
-  #index.M returns a matrix giving the row and column numbers for
-  #the pairs that are implicitly marginalized (X<->Y)
-  #index.C returns a matrix giving the row and column numbers for
-  #the pairs that are implicitly conditioned (X--Y)
+  #marginalized.latents: a list, for example list(X2~~X3,X4~~X5) that is passed
+  #from the main pwSEM function
+  #conditioned.latents: a list, for example list(X2~~X3,X4~~X5) that is passed
+  #from the main pwSEM function
 
-  index.M = which(x==100,arr.ind=T)
-  n.M <- nrow(index.M)/2 # number of pairs with marginalized latents
-  index.C<-which(x==10,arr.ind=T)
-  n.C<-nrow(index.C)/2 # number of pairs with conditioned latents
+  n.M <- length(marginalized.latents) # number of pairs with marginalized latents
+  n.C<-length(conditioned.latents)# number of pairs with conditioned latents
+
   #if there are no marginalized or conditioned latents, return
-  if(n.M==0 & n.C==0)return(x)
-
-  # new DAG including latent variables
+  if(n.M==0 & n.C==0)return(MAG)
+  # create a new DAG including latent variables for each marginalized or
+  #conditioned latent
   #set elements in rows and columns of latents to zero to start
-  new.DAG <- matrix(0,ncol=ncol(x)+n.M+n.C,nrow=nrow(x)+n.M+n.C)
+  new.DAG <- matrix(0,ncol=ncol(MAG)+n.M+n.C,nrow=nrow(MAG)+n.M+n.C)
   #copy the original MAG into the observed vars in new.DAG
-  new.DAG[1:ncol(x),1:nrow(x)]<-x
-  # add names to matrix
-  colnames(new.DAG) <- c(colnames(x),paste("L",1:(n.M+n.C),sep=""))
-  rownames(new.DAG) <- c(colnames(x),paste("L",1:(n.M+n.C),sep=""))
-  if(n.M>0){
-    # modify for marginal latents...
-    # the marginal latents do not have causal parents, so set to zero
-    new.DAG[(nrow(x)+1):(nrow(x)+n.M),] <- 0
-    # find pairs of observed variables caused by the same latent
-    cat <- apply(index.M,1,paste,collapse="")
-    cat2 <- apply(index.M[,c(2,1)],1,paste,collapse="")
-    match <- match(cat,cat2)
-    # matrix row number that has the second pair of the dependent error
-    # replace dependent error by directed path from Latent
-    no = 1
-   for (i in 1:n.M){
-    new.DAG[ncol(x)+no,index.M[i,1]] <- 1
-    new.DAG[ncol(x)+no,index.M[match[i],1]] <- 1
-    no = no+1
-    index.M <- index.M[-match[i],]
-    if (no > n.M){stop}
-    }
-  }
-
-  # find pairs of observed variables that are caused by the same
-  #latent
-  cat <- apply(index.C,2,paste,collapse="")
-  cat2 <- apply(index.C[,c(2,1)],1,paste,collapse="")
-  match <- match(cat,cat2)
-  # matrix row number that has the
-  #second pair of the dependent error
-  # replace dependent error by directed path from Latent
-  no <- n.M+1
-  if(n.C>0){
-    for (i in 1:n.C){
-      new.DAG[index.C[i,1],ncol(x)+no] <- 1
-      new.DAG[index.C[match[i],1],ncol(x)+no] <- 1
-      no = no+1
-      index.C <- index.C[-match[i],]
-      if (no > n.C){stop}
-    }
-  }
-  new.DAG[new.DAG==100] <- 0
+  new.DAG[1:ncol(MAG),1:nrow(MAG)]<-MAG
+  #remove all 100 or 10 values
+  new.DAG[new.DAG==100]<-0
   new.DAG[new.DAG==10]<-0
-  return(new.DAG)
+  # add variable names to matrix, naming the latents as L+number
+  colnames(new.DAG) <- c(colnames(MAG),paste("L",1:(n.M+n.C),sep=""))
+  rownames(new.DAG) <- c(colnames(MAG),paste("L",1:(n.M+n.C),sep=""))
 
+  #This is a function to extract the variable names from a single element in
+  #either marginalized.latents or conditioned.latents
+  #x is either an element from marginalized.latents or conditioned.latents
+  #returns a character vector holding the variable names of the pair of
+  #observed variables involved in the latent
+  get.var.names<-function(x){
+    x1<-strsplit(as.character(x[[1]]),split="~~")
+    first.var<-x1[[2]]
+    x2<-strsplit(x1[[3]],"")
+    second.var<-paste(x2[[1]][2],x2[[1]][3],sep="")
+    return(c(first.var,second.var))
+  }
+
+  n.latents<-0
+  n.obs.vars<-dim(MAG)[1]
+  #Do the marginalized latents
+  if(n.M>0){
+    for(i in 1:n.M){
+      n.latents<-n.latents+1
+      vars<-get.var.names(marginalized.latents[i])
+      new.DAG[n.obs.vars+n.latents,rownames(new.DAG)==vars[1]]<-1
+      new.DAG[n.obs.vars+n.latents,rownames(new.DAG)==vars[2]]<-1
+    }
+  }
+  #Now do the conditioned latents
+  if(n.C>0){
+    for(i in 1:n.C){
+      n.latents<-n.latents+1
+      vars<-get.var.names(conditioned.latents[i])
+      new.DAG[rownames(new.DAG)==vars[1],n.obs.vars+n.latents]<-1
+      new.DAG[rownames(new.DAG)==vars[2],n.obs.vars+n.latents]<-1
+    }
+  }
+  return(new.DAG)
 }
 
 find.possible.Q.in.pwSEM<-function(nvars, x, y) {
@@ -1338,6 +1339,7 @@ DAG.to.MAG.in.pwSEM<-function (full.DAG, latents = NA,
 
 extract.latents<-function(dag.with.latents,not.latent.vars){
   #extracts the latent variables from a DAG
+  #not.latent.vars: character vector holding the observed variables
   vars<-row.names(dag.with.latents)
   vars[-which(vars %in% not.latent.vars)]
 }
