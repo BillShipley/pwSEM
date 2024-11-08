@@ -966,7 +966,8 @@ MAG.to.DAG.in.pwSEM<-function(MAG,marginalized.latents,conditioned.latents){
   #from the main pwSEM function
   #conditioned.latents: a list, for example list(X2~~X3,X4~~X5) that is passed
   #from the main pwSEM function
-
+print("original MAG:")
+print(MAG)
   n.M <- length(marginalized.latents) # number of pairs with marginalized latents
   n.C<-length(conditioned.latents)# number of pairs with conditioned latents
 
@@ -990,11 +991,14 @@ MAG.to.DAG.in.pwSEM<-function(MAG,marginalized.latents,conditioned.latents){
   #x is either an element from marginalized.latents or conditioned.latents
   #returns a character vector holding the variable names of the pair of
   #observed variables involved in the latent
+
+#This internal fuction extracts the variable names of a list element of type
+#X~~Y on either side of the ~~ characters
   get.var.names<-function(x){
     x1<-strsplit(as.character(x[[1]]),split="~~")
     first.var<-x1[[2]]
-    x2<-strsplit(x1[[3]],"")
-    second.var<-paste(x2[[1]][2],x2[[1]][3],sep="")
+    x2<-strsplit(x1[[3]],"~")
+    second.var<-x2[[1]][-1]
     return(c(first.var,second.var))
   }
 
@@ -1005,6 +1009,8 @@ MAG.to.DAG.in.pwSEM<-function(MAG,marginalized.latents,conditioned.latents){
     for(i in 1:n.M){
       n.latents<-n.latents+1
       vars<-get.var.names(marginalized.latents[i])
+      print("get.var.names")
+      print(vars)
       new.DAG[n.obs.vars+n.latents,rownames(new.DAG)==vars[1]]<-1
       new.DAG[n.obs.vars+n.latents,rownames(new.DAG)==vars[2]]<-1
     }
@@ -1018,6 +1024,8 @@ MAG.to.DAG.in.pwSEM<-function(MAG,marginalized.latents,conditioned.latents){
       new.DAG[rownames(new.DAG)==vars[2],n.obs.vars+n.latents]<-1
     }
   }
+  print("new.DAG")
+  print(new.DAG)
   return(new.DAG)
 }
 
