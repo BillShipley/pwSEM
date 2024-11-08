@@ -966,8 +966,6 @@ MAG.to.DAG.in.pwSEM<-function(MAG,marginalized.latents,conditioned.latents){
   #from the main pwSEM function
   #conditioned.latents: a list, for example list(X2~~X3,X4~~X5) that is passed
   #from the main pwSEM function
-print("original MAG:")
-print(MAG)
   n.M <- length(marginalized.latents) # number of pairs with marginalized latents
   n.C<-length(conditioned.latents)# number of pairs with conditioned latents
 
@@ -1009,8 +1007,6 @@ print(MAG)
     for(i in 1:n.M){
       n.latents<-n.latents+1
       vars<-get.var.names(marginalized.latents[i])
-      print("get.var.names")
-      print(vars)
       new.DAG[n.obs.vars+n.latents,rownames(new.DAG)==vars[1]]<-1
       new.DAG[n.obs.vars+n.latents,rownames(new.DAG)==vars[2]]<-1
     }
@@ -1024,8 +1020,6 @@ print(MAG)
       new.DAG[rownames(new.DAG)==vars[2],n.obs.vars+n.latents]<-1
     }
   }
-  print("new.DAG")
-  print(new.DAG)
   return(new.DAG)
 }
 
@@ -1407,12 +1401,16 @@ prob.distribution.for.copula<-function(fun,data){
     return(prob)
   }
   else
-  if(fam$family=="beta"){
+  x<-fun$family
+  x<-substr(x,start=1,stop=15)
+
+  if(x[1]=="Beta regression"){
     pbeta2 <- function(x, mu, phi, ...) {
       stats::pbeta(x, shape1 = mu * phi, shape2 = (1 - mu) * phi, ...)}
 
     prob <- pbeta2(fun$y,mu=predict(fun,type="response"),
                  phi = exp(fun$family$getTheta()))
+    return(prob)
     }
     else
     x<-fun$family
@@ -1827,6 +1825,23 @@ extract.variable.info.from.gamm4<-function(fo,all.grouping.vars){
   #family: distribution & link function
   family<-fo$gam$family
 
+  #NEW not sure about this...
+  #The betar and negative binomial distributions don't output the correct
+  #names, so correct these
+
+  #This internal function replaces the name "Beta function(xx)" by "betar"
+  replace.family<-function(fo){
+    #This replaces "Beta regression" with"betar"
+    fo$family[1]<-sub(pattern="Beta regression",replacement="betar",
+                      x=fo$family[1])
+    #This strips away everything after, and including, the "("
+    y<-sub("\\(.*","",fo$family[1])
+    fo$family[1]<-y
+    family(fo)
+  }
+  family<-replace.family(fo$gam)
+  #END NEW
+
   #grouping.structure: names of the grouping variables
   if(inherits(fo,"gamm")){
     grouping.structure<-names(fo$lme$groups)
@@ -1866,8 +1881,23 @@ extract.variable.info.from.gam<-function(fo){
 
   #var.name: the name of the dependent variable
   var.name<-as.character(fo$formula[2])
-  #family: distribution & link function
   family<-fo$family
+#NEW not sure about this... IF CORRECT DO ALSO FOR extract.variable.info.from.gamm4
+  #The betar and negative binomial distributions don't output the correct
+  #names, so correct these
+
+#This internal function replaces the name "Beta function(xx)" by "betar"
+  replace.family<-function(fo){
+    #This replaces "Beta regression" with"betar"
+    fo$family[1]<-sub(pattern="Beta regression",replacement="betar",
+                      x=fo$family[1])
+    #This strips away everything after, and including, the "("
+    y<-sub("\\(.*","",fo$family[1])
+    fo$family[1]<-y
+    family(fo)
+  }
+  family<-replace.family(fo)
+#END NEW
   #The name of the single grouping structure is "no.groups"
   grouping.structure<-NA
   names(grouping.structure)<-"no.groups"
