@@ -198,7 +198,6 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
                   conditioning.latents=temp$conditioned.latents)
   }
   basis.set<-basiSet.MAG(equivalent.mag)
-  #  basis.set<-basiSet(equivalent.dag)
   if(!is.null(basis.set)){
     out.dsep<-test.dsep.claims(my.list=sem.functions,my.basis.set=basis.set,
                                data=data,use.permutations=use.permutations,do.smooth=do.smooth,
@@ -1585,6 +1584,7 @@ get.residuals<-function(my.list,dsep,data,do.smooth,
   #observed.vars holds the names of all observed variables in MAG
   info<-set.up.info.for.dsep.regressions(fun.list=my.list,
         all.grouping.vars=all.grouping.vars)
+
   n.vars<-length(info$var.name)
   if(n.vars!=length(observed.vars))
     stop("You have not modelled all variables in the DAG/MAG.
@@ -1607,7 +1607,7 @@ get.residuals<-function(my.list,dsep,data,do.smooth,
   #n.levels are the number of nesting levels for X and Y
   n.levels1<-sum(!is.na(info$grouping.structure[,set.var.nums$var.name==dsep[1]]))
   n.levels2<-sum(!is.na(info$grouping.structure[,set.var.nums$var.name==dsep[2]]))
-  #if n.levels==0 then use gam, since no nesting structure
+    #if n.levels==0 then use gam, since no nesting structure
   #if n.levels>0 then use gamm for X
   if(n.levels1==0){
 # Response residuals must be used
@@ -1758,7 +1758,8 @@ set.up.info.for.dsep.regressions<-function(fun.list,
          inherits(fun.list[i][[1]]$mer, "glmerMod") |
          inherits(fun.list[i][[1]],"gamm")){
         x<-extract.variable.info.from.gamm4(fun.list[i][[1]],
-                                            all.grouping.vars=all.grouping.vars)
+                      all.grouping.vars=all.grouping.vars)
+
       }
     out$var.name[i]<-x$var.name[1]
     out$family[i]<-x$family[1]
@@ -1837,9 +1838,9 @@ extract.variable.info.from.gamm4<-function(fo,all.grouping.vars){
     #This strips away everything after, and including, the "("
     y<-sub("\\(.*","",fo$family[1])
     fo$family[1]<-y
-    family(fo)
+    family
   }
-  family<-replace.family(fo$gam)
+  family<-replace.family(family)
   #END NEW
 
   #grouping.structure: names of the grouping variables
