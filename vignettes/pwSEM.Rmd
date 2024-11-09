@@ -22,7 +22,7 @@ library(pwSEM)
 The pwSEM package contains functions for conducting piecewise structural equation modelling (SEM).  There are three main functions that user's will typically use: pwSEM(), generalized.covariance() and perm.generalized.covariance().  Only pwSEM() is required unless you want to conduct each of the steps of the method yourself.
 
 ## Some technical details
-1. The null probabilities associated with each of the d-separation claims in the union basis set of your causal model are based on the generalized covariance statistic of Shah, R.D. & Peters, J. (2020)  The hardness of conditional independence testing and the generalized covariance measure.  The Annals of Statistics 48:1514-1538.  The generalized.covariance() function of this package calculates this statistic and its asymptotic null probability.  A permutation version of this test is available in the perm.generalized.covariance() function for small data sets (<= about 100 observations).
+1. The null probabilities associated with each of the d-separation claims in the union basis set of your causal model are based on the generalized covariance statistic of Shah, R.D. & Peters, J. (2020)  (The hardness of conditional independence testing and the generalized covariance measure.  The Annals of Statistics 48:1514-1538).  The generalized.covariance() function of this package calculates this statistic and its asymptotic null probability.  A permutation version of this test is available in the perm.generalized.covariance() function for small data sets (<= about 100 observations).
 
 2. Given a d-separation claim: X1 _||_X2|{C}, where C is the set of causal parents of either X1 or X2,  the generalized covariance statistic consists of conducting two regressions (X1~C and X2~C),  getting the "response" residuals (which are **not** the default type of residuals for gam or gamm4) from these two regressions, and then inputting these two vectors of residuals to calculate the generalized covariance statistic.  These regressions can be of any type that are appropriate given the nature of the dependent variables (X1, X2) and the assumed functional form linking them to the causal parents.
 
@@ -32,7 +32,9 @@ The pwSEM package contains functions for conducting piecewise structural equatio
 
 5. Optionally, the dependency between any assumed dependent errors between pairs of observed variables that are the causal children of implicitly marginalized latents or causal parents of implicitly conditioned latents is calculated.  This is either a covariance and Pearson correlation for normally distributed variables, or a Spearman correlation otherwise; these are based on the "response" residuals' i.e. based on the actual (observed - predicted) values of the original variables.
 
-6. The AIC statistic is calculated using the structural equations specified in the equivalent MAG if the equivalent MAG differs from your original causal model.  The AIC statistic is given in Shipley, B. & Douma, J.(2020). Generalized AIC and chi-squared statistics for path models consistent with directed acyclic graphs.  Ecology 101:e02960.
+6. The AIC statistic is calculated using the structural equations specified in the equivalent MAG if the equivalent MAG differs from your original causal model.  The AIC statistic is given in Shipley, B. & Douma, J.(2020). Generalized AIC and chi-squared statistics for path models consistent with directed acyclic graphs.  Ecology 101:e02960.  If there are correlated errors in your model, then the likelihood of the correlated errors is based on a normal copula function.
+
+7.  Mixed models including beta-distributed variables in the structural equations are not currently supported
 
 ## pwSEM
 There are three main steps required to fit and output the results of a piecewise SEM:
