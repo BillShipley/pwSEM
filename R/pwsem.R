@@ -1426,6 +1426,38 @@ prob.distribution.for.copula<-function(fun,data){
   return(prob)
 }
 
+#' Title get.AIC
+#'
+#' @param sem.model A list containing the structural equations, each created
+#' using either the gam or the gamm functions of the mgcv package
+#' @param MAG A matrix encoding the directed acyclic graph (DAG), or the mixed
+#' acyclic graph, of the structural equations model.  This is created using
+#' the DAG or the makeGM function in the gmm library
+#' @param data A data frame holding the observed data used in the calls to
+#' the models in the sem.model object
+#'
+#' @return A data frame containing the log-likelihood of the full SEM (LL),
+#' the number of free parameters that were estimated (K), along with the
+#' AIC and the bias-corrected AIC (AICc)
+#' @export
+#'
+#' @examples
+#' set.seed(10)
+#' N<-1000
+#' L1<-rnorm(N)
+#' x1<-0.5*L1+rnorm(N,0,sqrt(1-0.5^2))
+#' x2<-0.5*x1+rnorm(N,0,sqrt(1-0.5^2))
+#' x3<-0.5*L1+0.5*x2+rnorm(N,0,sqrt(1-2*0.5^2))
+#' x4<-0.5*x3+rnorm(N,0,sqrt(1-0.5^2))
+#' my.dat<-data.frame(x1,x2,x3,x4)
+#'
+#' my.list<-list(gam(x1~1,data=my.dat),
+#'              gam(x2~x1,data=my.dat),
+#'              gam(x3~x2,data=my.dat),
+#'              gam(x4~x3,data=my.dat))
+#'
+#' my.mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
+#' get.AIC(sem.model=my.list,MAG=my.mag,data=my.list)
 get.AIC<-function(sem.model,MAG,data){
   #This function calculate the log likelihood, K, AIC and AICc statistics
   #for both DAGs and MAGs (using gaussian copulas)
