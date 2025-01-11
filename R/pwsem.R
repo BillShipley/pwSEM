@@ -57,7 +57,8 @@ pwSEM.class<-function(x){
 #' variables involved in the sem functions that define groups for
 #' random effects.
 #' @param subset A logical vector describing which rows of the data are to
-#' be used.  Defaults to all full lines (subset=NULL)
+#' be used.  Defaults to all full lines (subset=NULL).  The data set used
+#' in the sem.functions list must match the subsetted data.
 #' @returns A list containing the following elements:
 #' causal.graph, dsep.equivalent.causal.graph, basis.set,
 #' dsep.probs, sem.functions,C.statistic, prob.C.statistic,
@@ -1457,6 +1458,8 @@ prob.distribution.for.copula<-function(fun,data){
 #' @export
 #'
 #' @examples
+#' library(mgcv)
+#' library(ggm)
 #' set.seed(10)
 #' N<-1000
 #' L1<-rnorm(N)
@@ -1471,8 +1474,9 @@ prob.distribution.for.copula<-function(fun,data){
 #'              gam(x3~x2,data=my.dat),
 #'              gam(x4~x3,data=my.dat))
 #'
-#' my.mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
-#' get.AIC(sem.model=my.list,MAG=my.mag,data=my.list)
+#'full.dag<-DAG(x1~L1,x2~x1,x3~x2+L1,x4~x3)
+#' my.mag<-DAG.to.MAG.in.pwSEM(full.DAG=full.dag,latents=c("L1))
+#' get.AIC(sem.model=my.list,MAG=my.mag,data=my.dat)
 get.AIC<-function(sem.model,MAG,data){
   #This function calculate the log likelihood, K, AIC and AICc statistics
   #for both DAGs and MAGs (using gaussian copulas)
