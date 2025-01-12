@@ -56,9 +56,6 @@ pwSEM.class<-function(x){
 #' @param all.grouping.vars A character vector giving the names of all
 #' variables involved in the sem functions that define groups for
 #' random effects.
-#' @param subset A logical vector describing which rows of the data are to
-#' be used.  Defaults to all full lines (subset=NULL).  The data set used
-#' in the sem.functions list must match the subsetted data.
 #' @returns A list containing the following elements:
 #' causal.graph, dsep.equivalent.causal.graph, basis.set,
 #' dsep.probs, sem.functions,C.statistic, prob.C.statistic,
@@ -131,7 +128,7 @@ pwSEM.class<-function(x){
 #' @export
 pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL,data,
                 use.permutations=FALSE,n.perms=5000,do.smooth=FALSE,
-                all.grouping.vars=NULL,subset=NULL){
+                all.grouping.vars=NULL){
   #
   #sem.functions is a list giving the gamm4 or gam models associated with each
   #variable in the sem, including exogenous variables.
@@ -142,8 +139,6 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
   #all.grouping.vars is a character vector giving the names of all
   #variables involved in the sem functions that define groups for
   #random effects.
-  #subset is a logical vector describing which lines of the data are to be
-  #used
   #remove lines with missing values, sort by grouping variables,
   #and add a new single grouping variable if there are no groups
 
@@ -157,14 +152,8 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
   return("ERROR: The same pair of observed variables are in both
          marginalized.latents and conditioned.latents")
   }
-  #subset.value will hold the actual text of the subset argument for output
-  subset.value<-deparse(substitute(subset))
-
-  #use only a subset of the full data set?
-  if(!is.null(subset))data<-data[subset,]
   data<-pwSEM.prepare.data.set(data=data,grouping.variables=all.grouping.vars)
   n.data.lines<-dim(data)[1]
-
   n.functions<-length(sem.functions)
   for(i in 1:n.functions){
     if(!(inherits(sem.functions[i][[1]],"gam") |
@@ -241,7 +230,7 @@ pwSEM<-function(sem.functions,marginalized.latents=NULL,conditioned.latents=NULL
   AIC.out<-get.AIC(sem.model=new.sems$sem.functions,
                           MAG=equivalent.mag,data=data)
   x<-list(causal.graph=mag,dsep.equivalent.causal.graph=equivalent.mag,
-          basis.set=basis.set,subset.value=subset.value,subset=subset,
+          basis.set=basis.set,
           dsep.probs=dsep.null.probs,
           sem.functions=new.sems$sem.functions,
           C.statistic=C.stat,prob.C.statistic=p.C.stat,
@@ -655,10 +644,6 @@ test.dsep.claims<-function(my.list,my.basis.set,data,use.permutations=FALSE,
 summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
   #object is an object produced by pwSEM()
   #structural.equations=T to output each structural equation
-  if(!is.null(object$subset)){
-    cat("Subset of full data set",object$subset.value,"\n")
-
-  }
   cat("Causal graph:","\n")
   var.names<-row.names(object$causal.graph)
   n.vars<-dim(object$causal.graph)[1]
@@ -1475,7 +1460,7 @@ prob.distribution.for.copula<-function(fun,data){
 #'              gam(x4~x3,data=my.dat))
 #'
 #'full.dag<-DAG(x1~L1,x2~x1,x3~x2+L1,x4~x3)
-#' my.mag<-DAG.to.MAG.in.pwSEM(full.DAG=full.dag,latents=c("L1))
+#' my.mag<-DAG.to.MAG.in.pwSEM(full.DAG=full.dag,latents=c("L1"))
 #' get.AIC(sem.model=my.list,MAG=my.mag,data=my.dat)
 get.AIC<-function(sem.model,MAG,data){
   #This function calculate the log likelihood, K, AIC and AICc statistics

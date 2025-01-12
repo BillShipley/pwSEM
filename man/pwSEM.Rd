@@ -12,8 +12,7 @@ pwSEM(
   use.permutations = FALSE,
   n.perms = 5000,
   do.smooth = FALSE,
-  all.grouping.vars = NULL,
-  subset = NULL
+  all.grouping.vars = NULL
 )
 }
 \arguments{
@@ -43,10 +42,6 @@ claims, but this will slow down the function.}
 \item{all.grouping.vars}{A character vector giving the names of all
 variables involved in the sem functions that define groups for
 random effects.}
-
-\item{subset}{A logical vector describing which rows of the data are to
-be used.  Defaults to all full lines (subset=NULL).  The data set used
-in the sem.functions list must match the subsetted data.}
 }
 \value{
 A list containing the following elements:
