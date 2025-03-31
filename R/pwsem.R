@@ -1,4 +1,5 @@
 pwSEM.prepare.data.set<-function(data,grouping.variables=NULL){
+  #
   #This function takes an original data set (data), removes any lines with
   #missing values, and sorts it according to the grouping variables.  If there
   #are no grouping variables, it adds a single grouping variable called "group"
