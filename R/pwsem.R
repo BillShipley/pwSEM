@@ -2204,3 +2204,504 @@ MCX2<-function (model.df, n.obs, model.chi.square, n.sim = 10000,
   list(MCprobability = prob, MLprobability = 1 - pchisq(model.chi.square,
                                                         model.df))
 }
+
+#starting the CI.algorithm code...
+make.formula<-function(dat,y,Q,smooth=TRUE){
+  #constructs the model formula for y ~ Q
+  #y:the column number of the dependent variable in the data
+  #Q: a vector of column numbers for the dependent variables
+  #  (conditioning variables)
+  var.names<-names(dat)
+  for1<-paste(var.names[y],"~ 1")
+  Q.length<-length(Q)
+  if(sum(is.na(Q)) > 0)return(formula(for1))
+  if(sum(is.na(Q))==0){
+    for(i in 1:Q.length){
+      unique.values.in.Q<-length(unique(dat[,i]))
+      #Can't use smoother if the number of unique values in the independent variable
+      #is less than 10
+      if(!smooth | unique.values.in.Q<10)
+        for1<-paste(for1,"+",var.names[Q[i]],collapse=" ")
+      if(smooth & unique.values.in.Q>=10)
+        for1<-paste(for1,"+","s(",var.names[Q[i]],")",collapse=" ")
+    }
+    formula(for1)
+  }
+
+}
+
+random.formula<-function(y,y.levels){
+  #constructs the random formula for use in gamm4
+  #y: the column number of the dependent variable
+  #y.levels: a list containing the names of the variables into which
+  #the y variable is nested or cross-classified; example for 3 levels:
+  #  $X1
+  #  [1] "level1" "level2"
+  #
+  #  $X2
+  #  [1] "level1" "level2"
+  #
+  #  $X3
+  #  [1] "level1" "level2"
+  y.level.name<-names(y.levels)[y]
+  N.levels<-length(y.levels[[y.level.name]])
+  y.random<-paste("~(1|",as.character(y.levels[[y.level.name]][[1]]),")",
+                  sep="")
+  for(i in 2:(N.levels)){
+    y.random<-paste(y.random,"+(1|",as.character(y.levels[[y.level.name]][[i]]),")",
+                    sep="")
+  }
+  formula(y.random)
+}
+
+Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
+                      smooth=smooth,family,nesting=NA) {
+  #Uses Generalized.covariance function frompwSEM package
+  #Uses gam from mgcv package and gamm4 from gamm4 package
+  #This calculates the null probability of a (conditional) independence
+  #between the variables in columns x and y of dat conditional on the variables
+  #in columns Q of dat.
+  #dat: the full data set, including variables indexing the nesting structure
+  # (if present)
+  #reduced.x, reduced.y: column numbers of var x and y  in the reduced data set,
+  #excluding nesting variables.
+  #smooth (T,F) specifies if the gam will use smoothers or a linear model
+  #family is a character vector specifying the family to which each variable
+  #belongs
+  #nesting is a list specifying the names of the variables in x and y that
+  #define their nesting levels (not including the last (residual) level).
+  #Example with three levels (genus, species, individual):
+  #       X1     X2     X3
+  #  1 level1 level1 level1
+  #  2 level2 level2 level2
+  #
+  # x, y and Q are simply the column numbers in dat
+  if (is.na(x) | is.na(y))
+    stop("ERROR in Pcor.prob of Causal.Inference; x or y missing")
+  if (sum(is.na(Q)) == 0 & any(x == Q)) {
+    stop("ERROR in Pcor.prob of Causal.Inference; x=Q")
+  }
+  if (sum(is.na(Q)) == 0 & any(y == Q))
+    stop("ERROR in Pcor.prob of Causal.Inference; y=Q")
+  if (x == y)
+    stop("ERROR in Causal.Inference; x=y")
+  if (sum(is.na(Q)) == 0) {
+    n.cond <- length(Q)
+  }
+  else {
+    n.cond <- 0
+  }
+  #if there is no nesting in the data, use gam from mgcv
+  #residuals of x
+  if(sum(is.na(nesting))>0){
+    #use gam (generalized additive model function in mgcv)
+    fit.x<-mgcv::gam(formula=make.formula(dat=dat,y=x,Q=Q,smooth=smooth),
+                     data=dat,family=family[x])
+    res.x<-residuals(fit.x,type="response")
+    #residuals of y
+    fit.y<-mgcv::gam(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),data=dat,
+                     family=family[y])
+    res.y<-residuals(fit.y,type="response")
+  }
+  if(sum(is.na(nesting))==0){
+    #mixed model, so use gamm (generalized additive mixed model function in mgcv)
+    fit.x<-gamm4::gamm4(formula=make.formula(dat=dat,y=x,Q=Q,smooth=smooth),
+                        random=random.formula(y=reduced.x,y.levels=nesting),
+                        family=family[reduced.x],data=dat)
+    #I think that$mer  this is correct because it produces the same t-value
+    #as when using the glmer function
+    res.x<-residuals(fit.x$mer,type="response")
+    fit.y<-gamm4::gamm4(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),
+                        random=random.formula(y=reduced.y,y.levels=nesting),
+                        family=family[reduced.y],data=dat)
+    res.y<-residuals(fit.y$mer,type="response")
+  }
+  #null prob from generalized covariance
+  p<-pwSEM::generalized.covariance(res.x,res.y)$prob
+  p
+}
+
+extract.graph.data<-function(dat,nesting){
+  #returns only the columns of dat that contain variable values, not the
+  #variables that describe the nesting structure
+  #
+  #dat:the data frame, including the columns giving the nesting structure
+  #nesting: a list giving the columns giving the nesting structure for that
+  #variable.
+  #No nesting variables, so return
+  if(sum(is.na(nesting))>0)return(dat)
+  #Else...
+  #nesting.var.names holds only the variables in the original dat, excluding
+  #those indexing the nesting structure
+  nesting.var.names<-unique(unlist(nesting))
+  #var.names holds all of the variables in the original dat, including those
+  #indexing the nesting structure
+  var.names<-names(dat)
+  exclude.vars<-match(nesting.var.names,var.names)
+  #returns the original data set minus the columns indexing the nesting
+  #structure.
+  dat[,-exclude.vars]
+}
+
+full.data.column.number<-function(x,full.dat,reduced.dat){
+  #Given the column number(s) (x) of variable(s) in the reduced data set, this
+  #function gives  the corresponding column number(s) in the full data set
+  #(full.dat), which includes extra variables indexing the nesting structure
+  full.names<-names(full.dat)
+  active.names<-names(reduced.dat)
+  x.name<-active.names[x]
+  full.data.col.numbers<-(1:length(full.names))[full.names%in%x.name]
+  if(length(full.data.col.numbers)==0){
+    stop("error in full.data.column.number")
+  }
+  full.data.col.numbers
+}
+#This is the code to create the documentation for the function
+#' @title The CI.algorithm function
+#' @description This function impliments the exploratory method of causal
+#' discovery called the CI (Causal Inference) algorithm of Pearl.
+#' @param dat A data frame containing the variables for which a partially-
+#' oriented dependency graph is sought.  All variables in this data frame
+#' will be used except for those listed in the nesting= argument; these
+#' variables describe the nesting structure (if present) of the other
+#' variables.
+#' @param family A  character vector giving the name of the distributional type
+#' of each variable.  Each element is the name of the distribution for that
+#' variable (except those in the nesting= argument) in the same order as they
+#' appear in the data set.  Optionsare "gaussian", "poisson", "binomial" or "gamma"
+#' @param nesting A named list.  Each name in the list is the name of the variable
+#' in the data set (except for the nesting= variables) followed by a character
+#' vector giving the names of the variables in dat holding the nesting structure.
+#' The default is nesting=NA, which is used if there are no nesting variables.
+#' @param smooth A logical value stating if linear (or generalized linear)
+#' links between the variables are assumed (smooth=FALSE) or not (smooth=FALSE).
+#' The default is smooth=TRUE, in which case generalized additive models are
+#' used to measure conditional independence and therefore non-linear relationships
+#' are assumed.
+#' @param alpha.reject A numerical value between 0 and 1 giving the
+#' "significance level" to use when judging (conditional) independence.  The
+#' default value is alpha.reject=0.05.
+#' @param write.result A logical value indicating if you want the resulting
+#' partially-oriented dependency graph to be output to the screen
+#' (write.result = T) or just the adjacency matrix returned as output.  The
+#' default value is write.result = T.
+#' @returns Just the partially-oriented graph output to the screen or
+#' just the adjacency matrix
+#' @examples
+#' CI.algorithm(dat=sim_normal.no.nesting,family=c("gaussian","gaussian","gaussian","gaussian"
+#' ),nesting=NA,smooth=TRUE,alpha.reject=0.05)
+#'
+#' @export
+CI.algorithm<-function (dat, family,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
+                        write.result = T)
+  #The same as the Causal.Inference function in CauseAndCorrelation, except
+  #that the Pcor.prob function is changed to use the Generalized Covariance
+  #statistic and allows for glm and glmm with smoothers
+  #
+  #dat holds the data on the variables AND the nesting levels (if present)
+  #
+  #family: a character vector holding the distributional family of each variable
+  #in dat
+  #nesting: a list holding the variables in dat describing the nesting or
+  #cross-classification variables
+  #smooth: logical value stating to use smoother or linear functions
+  #alpha.reject: the "significance" probability level below which independence
+  #is concluded
+  #write.result: logical to return full results (TRUE) or just the partially
+  #oriented dependency graph
+{
+
+  pairs.with.edge <- function(cgraph) {
+    #returns a matrix with two rows, giving the column number of the pairs
+    #of variables that are joined by an edge in cgraph.  Pairs without an edge
+    #are columns with zeros.
+    nvars <- dim(cgraph)[2]
+    #possible pairs of variables
+    com <- utils::combn(1:nvars, 2)
+    #number of possible pairs of variables
+    ncombs <- dim(com)[2]
+    keep <- rep(1, ncombs)
+    #cycle through each possible pairs of variables
+    for (i in 1:ncombs) {
+      #if that pair is not joined by an edge, don't count it
+      if (cgraph[com[1, i], com[2, i]] == 0) {
+        com[1, i] <- com[2, i] <- 0
+      }
+    }
+    #the pairs of variables that are joined by an edge
+    com[, com[1, ] > 0]
+  }
+  #returns a vector of the variable numbers except x and y
+  find.possible.Q <- function(nvars, x, y) {
+    z <- 1:nvars
+    z[x] <- z[y] <- 0
+    z[z > 0]
+  }
+  #start...
+
+  #reduced.dat excludes the columns giving the nesting structure
+  #if no nesting variables, returns dat
+  reduced.dat<-extract.graph.data(dat=dat,nesting=nesting)
+  #nvars is the number of variables in the reduced data set without nesting
+  #variables.
+  nvars <- dim(reduced.dat)[2]
+  #Check if the number of variables in nesting is the same as in reduced.dat
+  if(sum(is.na(nesting))==0 & length(nesting)!=nvars){
+    stop("Number of variables in nesting not equal to the number in dat")
+  }
+  #Check if the number of variables in family is the same as in reduced.dat
+  if(length(family)!=nvars){
+    stop("Number of variables in family not equal to the number in dat")
+  }
+  cat("Making undirected dependency graph.\n")
+  cat("This might take a while... \n")
+  #start with all variables joined by an edge
+  #cgraph doesn't include the nesting variables in the full data set.
+  #Start with a completely saturated graph
+  cgraph <- matrix(1, nrow = nvars, ncol = nvars)
+  diag(cgraph) <- rep(0, nvars)
+  #do.pairs returns a matrix with two rows.  Each column gives the column numbers
+  #(in the reduced data set) of pairs variables that are joined by an edge in
+  #cgraph.  Pairs without an edge are columns with zeros.
+  do.pairs <- pairs.with.edge(cgraph)
+  #n.pairs: the number of pairs of variables in graph having an edge between them
+  n.pairs <- dim(do.pairs)[2]
+  if (n.pairs > 0) {
+    #cycle through each possible pair
+    for (j in 1:n.pairs) {
+      #get the column number of the first variable in the pair (do.pairs[1, j])
+      #in the full data set, including nesting variables
+      col1<-full.data.column.number(do.pairs[1, j],full.dat=dat,
+                                    reduced.dat=reduced.dat)
+      #get the column number of the second variable in the pair (do.pairs[2, j])
+      #in the full data set, including nesting variables
+      col2<-full.data.column.number(do.pairs[2, j],full.dat=dat,
+                                    reduced.dat=reduced.dat)
+      #No conditioning variables, so don't need their column numbers
+      p <- Pcor.prob(dat=dat,x = col1, y = col2, reduced.x=do.pairs[1, j],
+                     reduced.y=do.pairs[2, j],Q = NA, reduced.Q=NA,
+                     family=family,nesting=nesting,smooth=smooth)
+      if (p > alpha.reject) {
+        #these two variables are unconditionally independent, so remove their edge
+        cgraph[do.pairs[1, j], do.pairs[2, j]] <- 0
+        cgraph[do.pairs[2, j], do.pairs[1, j]] <- 0
+        break
+      }
+    }
+  }
+  #At this point, pairs that are unconditionally independent have had their
+  #line removed and are no longer joined.
+  #max.order is the largest number of possible conditioning variables
+  max.order <- nvars - 2
+  #cycle through the conditioning orders (i)
+  for (i in 1:max.order) {
+    cat(".")
+    #This gives the pairs that are still joined at that conditioning order
+    do.pairs <- pairs.with.edge(cgraph)
+    if (is.vector(do.pairs))
+      do.pairs <- matrix(do.pairs, ncol = 1)
+    #total number of sets of conditioning variables
+    n.pairs <- dim(do.pairs)[2]
+    if (n.pairs > 0) {
+      #cycle through the sets of conditioning variables at that conditioning order
+      #for this pair
+      for (j in 1:n.pairs) {
+        #get all possible conditioning sets of that order for this pair still joined
+        Q <- find.possible.Q(nvars = nvars, x = do.pairs[1, j],
+                             y = do.pairs[2, j])
+        if (length(Q) > 1)
+          x <- combn(Q, i)
+        else x <- as.matrix(Q, 1, 1)
+        for (k in 1:length(x[1, ])) {
+          x1 <- do.pairs[1, j]
+          #get the column number of the first variable in the pair (do.pairs[1, j])
+          #in the full data set, including nesting variables
+          col1<-full.data.column.number(x1,full.dat=dat,reduced.dat=reduced.dat)
+          #x1 is the column number of x in the reduced data set without nesting
+          #col1 is the column number of x in the full data set with nesting
+          y1 <- do.pairs[2, j]
+          #get the column number of the second variable in the pair (do.pairs[2, j])
+          #in the full data set, including nesting variables
+          col2<-full.data.column.number(y1,full.dat=dat,reduced.dat=reduced.dat)
+          #y1 is the column number of y in the reduced data set without nesting
+          #col2 is the column number of y in the full data set with nesting
+          Qcond <- x[, k]
+          colQ<-full.data.column.number(Qcond,full.dat=dat,
+                                        reduced.dat=reduced.dat)
+          #Qcond is the column number of Q in the reduced data set without nesting
+          #colQ is the column number of Q in the full data set with nesting
+          #x, y are the column numbers of x and y in the reduced data set without nesting
+          #col1, col2 are the column numbers of x and y in the full data set
+          #Qcond are the column numbers of Qcond in the reduced data set without nesting
+          #colQ are the column numbers of Qcond in the full data set.
+          p <- Pcor.prob(dat=dat,x = col1, y = col2, reduced.x=x1,
+                         reduced.y=y1,Q = colQ,reduced.Q=Qcond,
+                         family=family,nesting=nesting,smooth=smooth)
+          if (p > alpha.reject) {
+            #These two variables are conditionally independent, so remove their edge
+            #and move on to another pair that are still joined
+            cgraph[do.pairs[1, j], do.pairs[2, j]] <- 0
+            cgraph[do.pairs[2, j], do.pairs[1, j]] <- 0
+          }
+        }
+      }
+    }
+  }
+  #Here, the undirected dependency graph is complete
+  #Start evaluating the unshielded triplets
+  cat("\n")
+  cat("Finished undirected dependency graph","\n")
+  cat("Orienting edges...\n\n")
+  triplets <- utils::combn(1:nvars, 3)
+  n.triplets <- dim(triplets)[2]
+  for (i in 1:n.triplets) {
+    #triplets: outer1--inner--outer2
+    outer1 <- inner <- outer2 <- 0
+    #Case 1
+    if (cgraph[triplets[1, i], triplets[2, i]] > 0 & cgraph[triplets[2, i],
+                                                            triplets[3, i]] > 0 & cgraph[triplets[1, i], triplets[3, i]] == 0) {
+      outer1 <- triplets[1, i]
+      inner <- triplets[2, i]
+      outer2 <- triplets[3, i]
+      #unshielded pattern: (1)--(2)--(3)
+    }
+    #Case 2
+    if (cgraph[triplets[1, i], triplets[3, i]] > 0 & cgraph[triplets[1, i],
+                                                            triplets[2, i]] == 0 & cgraph[triplets[3, i], triplets[2, i]] > 0) {
+      outer1 <- triplets[1, i]
+      outer2 <- triplets[2, i]
+      inner <- triplets[3, i]
+      #unshielded pattern: (1)--(3)--(2)
+    }
+    #Case 3
+    if (cgraph[triplets[1, i], triplets[3, i]] > 0 & cgraph[triplets[1,
+                                                                     i], triplets[2, i]] > 0 & cgraph[triplets[2, i], triplets[3, i]] == 0) {
+      outer2 <- triplets[3, i]
+      outer1 <- triplets[2, i]
+      inner <- triplets[1, i]
+      #unshielded pattern: (2)--(3)--(1)
+    }
+    if (outer1 > 0 & outer2 > 0 & inner > 0) {
+      flag <- 1
+      #flag=1 means a definite collider
+      #start off with triplet being a definite collider
+
+      #get the column number of the first variable in the pair
+      #in the full data set, including nesting variables
+      col1<-full.data.column.number(outer1,full.dat=dat,
+                                    reduced.dat=reduced.dat)
+      #get the column number of the second variable in the pair
+      #in the full data set, including nesting variables
+      col2<-full.data.column.number(outer2,full.dat=dat,
+                                    reduced.dat=reduced.dat)
+      #get the column number of the variables in the conditioning set
+      #in the full data set, including nesting variables
+
+      colQ<-full.data.column.number(inner,full.dat=dat,
+                                    reduced.dat=reduced.dat)
+      p <- Pcor.prob(dat=dat,x = col1, y = col2, reduced.x=outer1,
+                     reduced.y=outer2,Q = colQ,reduced.Q=inner,
+                     family=family, nesting=nesting,smooth=smooth)
+      if (p > alpha.reject & nvars > 3){
+        #since p is not significant, the two variables at the ends of the triplet
+        #are conditionally independent given Q, so not a definite non-collider
+        flag <- 0
+        #flag=1 means a definite non-collider
+      }
+      if (p > alpha.reject & nvars == 3){
+        #since p is significant, the two variables at the ends of the triplet
+        #are conditionally independent given Q, so not a definite non-collider
+        flag <- 0
+        #flag=1 means a definite collider; since there are no more conditioning vars
+        #to test, we know that this is a definite collider
+      }
+      if (nvars > 3) {
+        var.set <- (1:nvars)[-c(outer1, inner, outer2)]
+        corder <- 1
+        ncond <- length(var.set)
+        while (flag == 1 & corder <= ncond) {
+          if (ncond == 1)
+            cset <- matrix(var.set, 1, 1)
+          if (ncond > 1)
+            cset <- combn(var.set, corder)
+          ncset <- dim(cset)[2]
+          #cycling through higher level conditioning sets
+          for (i2 in 1:ncset) {
+
+            #get the column number of the first variable in the pair
+            #in the full data set, including nesting variables
+            col1<-full.data.column.number(outer1,full.dat=dat,
+                                          reduced.dat=reduced.dat)
+            #get the column number of the second variable in the pair
+            #in the full data set, including nesting variables
+            col2<-full.data.column.number(outer2,full.dat=dat,
+                                          reduced.dat=reduced.dat)
+            #get the column number of the  variables in the conditioning set
+            #in the full data set, including nesting variables
+            colQ<-full.data.column.number(c(inner, cset[, i2]),full.dat=dat,
+                                          reduced.dat=reduced.dat)
+            p <- Pcor.prob(dat=dat,x = col1, y = col2, reduced.x=outer1,
+                           reduced.y=outer2,Q = colQ,
+                           reduced.Q=c(inner, cset[, i2]),
+                           family=family, nesting=nesting,smooth=smooth)
+            if (p > alpha.reject){
+              #since p is significant, the two variables at the ends of the triplet
+              #are conditionally independent given Q, so not a definite non-collider
+              flag <- 0
+            }
+          }
+          corder <- corder + 1
+        }
+      }
+      if (flag == 1){
+        #since the triplet pattern is a definite collider, orient
+        cgraph[outer1, inner] <- cgraph[outer2, inner] <- 2
+      }
+    }
+  }
+  #function to write out full results, if using alone rather than inside
+  #Exploratory.pwSEM
+  EPA.write <- function(cgraph, dat) {
+    nvars <- dim(cgraph)[1]
+    if (!is.null(names(dat)))
+      var.names <- names(dat)
+    if (is.null(names(dat)))
+      var.names <- 1:nvars
+    npossible <- factorial(nvars)/(factorial(nvars - 2) *
+                                     2)
+    count <- 0
+    for (i in 1:(nvars - 1)) {
+      for (j in (i + 1):nvars) {
+        if (cgraph[i, j] > 0 | cgraph[j, i] > 0)
+          count <- count + 1
+        if (count > npossible)
+          return("ERROR")
+        if (cgraph[i, j] == 1 & cgraph[j, i] == 1) {
+          cat(var.names[i], "o--o", var.names[j], "\n")
+        }
+        if (cgraph[i, j] == 2 & cgraph[j, i] == 1) {
+          cat(var.names[i], "o->", var.names[j], "\n")
+        }
+        if (cgraph[j, i] == 2 & cgraph[i, j] == 1) {
+          cat(var.names[i], "<-o", var.names[j], "\n")
+        }
+        if (cgraph[j, i] == 2 & cgraph[i, j] == 2) {
+          cat(var.names[i], "<->", var.names[j], "\n")
+        }
+      }
+    }
+    out <- apply(cgraph, 2, sum)
+    for (i in 1:nvars) if (out[i] == 0)
+      cat(var.names[i], "-- none\n")
+  }
+  if (write.result){
+    cat("Partially oriented dependency graph: \n")
+    EPA.write(cgraph, dat=reduced.dat)
+  }
+  if (!write.result){
+    #Then just return the partially oriented dependency graph
+    rownames(cgraph)<-names(reduced.dat)
+    colnames(cgraph)<-names(reduced.dat)
+    cgraph
+  }
+}
