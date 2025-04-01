@@ -3,6 +3,7 @@
 S3method(pairs,without.edge.in.pwSEM)
 S3method(summary,pwSEM.class)
 S3method(update,fun)
+export(CI.algorithm)
 export(DAG.to.MAG.in.pwSEM)
 export(MAG.to.DAG.in.pwSEM)
 export(MCX2)

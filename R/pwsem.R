@@ -2266,8 +2266,8 @@ Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
   #reduced.x, reduced.y: column numbers of var x and y  in the reduced data set,
   #excluding nesting variables.
   #smooth (T,F) specifies if the gam will use smoothers or a linear model
-  #family is a character vector specifying the family to which each variable
-  #belongs
+  #family is a data frame specifying the family to which each variable
+  #belongs; eg data.frame(X1="gaussian",X2="poisson")
   #nesting is a list specifying the names of the variables in x and y that
   #define their nesting levels (not including the last (residual) level).
   #Example with three levels (genus, species, individual):
@@ -2296,24 +2296,24 @@ Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
   if(sum(is.na(nesting))>0){
     #use gam (generalized additive model function in mgcv)
     fit.x<-mgcv::gam(formula=make.formula(dat=dat,y=x,Q=Q,smooth=smooth),
-                     data=dat,family=family[x])
+                     data=dat,family=family[,x])
     res.x<-residuals(fit.x,type="response")
     #residuals of y
     fit.y<-mgcv::gam(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),data=dat,
-                     family=family[y])
+                     family=family[,y])
     res.y<-residuals(fit.y,type="response")
   }
   if(sum(is.na(nesting))==0){
     #mixed model, so use gamm (generalized additive mixed model function in mgcv)
     fit.x<-gamm4::gamm4(formula=make.formula(dat=dat,y=x,Q=Q,smooth=smooth),
                         random=random.formula(y=reduced.x,y.levels=nesting),
-                        family=family[reduced.x],data=dat)
+                        family=family[,reduced.x],data=dat)
     #I think that$mer  this is correct because it produces the same t-value
     #as when using the glmer function
     res.x<-residuals(fit.x$mer,type="response")
     fit.y<-gamm4::gamm4(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),
                         random=random.formula(y=reduced.y,y.levels=nesting),
-                        family=family[reduced.y],data=dat)
+                        family=family[,reduced.y],data=dat)
     res.y<-residuals(fit.y$mer,type="response")
   }
   #null prob from generalized covariance
@@ -2356,6 +2356,42 @@ full.data.column.number<-function(x,full.dat,reduced.dat){
   }
   full.data.col.numbers
 }
+
+declare.family<-function(dat,family=NA,nesting){
+  #dat is the full data set, including any nesting variables declared in "nesting"
+  #nesting: a named list giving the nesting variables for that variable
+  #family: a data.frame giving each variable that is NOT gaussian and
+  #its distributional family; eg data.frame(X1="poisson")
+  #declare.family(dat,family=data.frame(recruited="binomial"),nesting=
+  # blue.tits.nesting)
+  #
+  #returns: a data frame giving each variable name and its distributional family
+  nesting.names<-unique(unlist(nesting))
+  all.names<-names(dat)
+  #if there is no nesting...
+  if(sum(is.na(nesting))>0){
+    var.names<-all.names
+    nvars<-length(all.names)
+  }
+  #if there is nesting...
+  if(sum(is.na(nesting))==0){
+    var.names<-all.names[all.names%in%names(nesting)]
+    nvars<-length(all.names)-length(nesting.names)
+  }
+  family.vec<-stats::setNames(as.list(rep("gaussian", nvars)), var.names)
+  family.vec<-as.data.frame(family.vec,stringsAsFactors=FALSE)
+  if(sum(is.na(family))>0)return(family.vec)
+  for(i in 1:nvars){
+    for(j in 1:length(names(family))){
+      if(var.names[i]==names(family)[j]){
+        family.vec[i]<-family[j]
+        break
+      }
+    }
+  }
+  return(family.vec)
+}
+
 #This is the code to create the documentation for the function
 #' @title The CI.algorithm function
 #' @description This function impliments the exploratory method of causal
@@ -2365,10 +2401,9 @@ full.data.column.number<-function(x,full.dat,reduced.dat){
 #' will be used except for those listed in the nesting= argument; these
 #' variables describe the nesting structure (if present) of the other
 #' variables.
-#' @param family A  character vector giving the name of the distributional type
-#' of each variable.  Each element is the name of the distribution for that
-#' variable (except those in the nesting= argument) in the same order as they
-#' appear in the data set.  Optionsare "gaussian", "poisson", "binomial" or "gamma"
+#' @param family A  data frame giving the name of the distributional type
+#' of each variable that is not Gaussian. Example: data.frame(X1="binomial")
+#' if all variables except X1 are Gaussian but X1 is binomial.
 #' @param nesting A named list.  Each name in the list is the name of the variable
 #' in the data set (except for the nesting= variables) followed by a character
 #' vector giving the names of the variables in dat holding the nesting structure.
@@ -2388,11 +2423,11 @@ full.data.column.number<-function(x,full.dat,reduced.dat){
 #' @returns Just the partially-oriented graph output to the screen or
 #' just the adjacency matrix
 #' @examples
-#' CI.algorithm(dat=sim_normal.no.nesting,family=c("gaussian","gaussian","gaussian","gaussian"
+#' CI.algorithm(dat=nested_data,family=c("gaussian","gaussian","gaussian","gaussian"
 #' ),nesting=NA,smooth=TRUE,alpha.reject=0.05)
 #'
 #' @export
-CI.algorithm<-function (dat, family,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
+CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
                         write.result = T)
   #The same as the Causal.Inference function in CauseAndCorrelation, except
   #that the Pcor.prob function is changed to use the Generalized Covariance
@@ -2400,8 +2435,9 @@ CI.algorithm<-function (dat, family,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
   #
   #dat holds the data on the variables AND the nesting levels (if present)
   #
-  #family: a character vector holding the distributional family of each variable
-  #in dat
+  #family: a data frame giving each variable that is NOT gaussian and its
+  # distributional family.  For example, if the variable X1 in dat is binomial
+  #then family=data.frame(X1="binomial"); by default, a variable is gaussian
   #nesting: a list holding the variables in dat describing the nesting or
   #cross-classification variables
   #smooth: logical value stating to use smoother or linear functions
@@ -2409,6 +2445,7 @@ CI.algorithm<-function (dat, family,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
   #is concluded
   #write.result: logical to return full results (TRUE) or just the partially
   #oriented dependency graph
+  #
 {
 
   pairs.with.edge <- function(cgraph) {
@@ -2449,10 +2486,10 @@ CI.algorithm<-function (dat, family,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
   if(sum(is.na(nesting))==0 & length(nesting)!=nvars){
     stop("Number of variables in nesting not equal to the number in dat")
   }
-  #Check if the number of variables in family is the same as in reduced.dat
-  if(length(family)!=nvars){
-    stop("Number of variables in family not equal to the number in dat")
-  }
+
+  #setting the distributional family if each variable
+  #family is a data frame
+  family<-declare.family(dat,family=NA,nesting)
   cat("Making undirected dependency graph.\n")
   cat("This might take a while... \n")
   #start with all variables joined by an edge
