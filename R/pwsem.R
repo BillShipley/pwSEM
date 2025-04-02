@@ -2214,7 +2214,7 @@ make.formula<-function(dat,y,Q,smooth=TRUE){
   var.names<-names(dat)
   for1<-paste(var.names[y],"~ 1")
   Q.length<-length(Q)
-  if(sum(is.na(Q)) > 0)return(formula(for1))
+  if(sum(is.na(Q)) > 0)return(stats::formula(for1))
   if(sum(is.na(Q))==0){
     for(i in 1:Q.length){
       unique.values.in.Q<-length(unique(dat[,i]))
@@ -2225,7 +2225,7 @@ make.formula<-function(dat,y,Q,smooth=TRUE){
       if(smooth & unique.values.in.Q>=10)
         for1<-paste(for1,"+","s(",var.names[Q[i]],")",collapse=" ")
     }
-    formula(for1)
+    stats::formula(for1)
   }
 
 }
@@ -2297,11 +2297,11 @@ Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
     #use gam (generalized additive model function in mgcv)
     fit.x<-mgcv::gam(formula=make.formula(dat=dat,y=x,Q=Q,smooth=smooth),
                      data=dat,family=family[,x])
-    res.x<-residuals(fit.x,type="response")
+    res.x<-stats::residuals(fit.x,type="response")
     #residuals of y
     fit.y<-mgcv::gam(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),data=dat,
                      family=family[,y])
-    res.y<-residuals(fit.y,type="response")
+    res.y<-stats::residuals(fit.y,type="response")
   }
   if(sum(is.na(nesting))==0){
     #mixed model, so use gamm (generalized additive mixed model function in mgcv)
@@ -2310,11 +2310,11 @@ Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
                         family=family[,reduced.x],data=dat)
     #I think that$mer  this is correct because it produces the same t-value
     #as when using the glmer function
-    res.x<-residuals(fit.x$mer,type="response")
+    res.x<-stats::residuals(fit.x$mer,type="response")
     fit.y<-gamm4::gamm4(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),
                         random=random.formula(y=reduced.y,y.levels=nesting),
                         family=family[,reduced.y],data=dat)
-    res.y<-residuals(fit.y$mer,type="response")
+    res.y<-stats::residuals(fit.y$mer,type="response")
   }
   #null prob from generalized covariance
   p<-pwSEM::generalized.covariance(res.x,res.y)$prob
@@ -2393,9 +2393,14 @@ declare.family<-function(dat,family=NA,nesting){
 }
 
 #This is the code to create the documentation for the function
+#use_package("ggm")
+#use_package("gamm4")
+#use_package("mgcv")
+#use_package("stats")
 #' @title The CI.algorithm function
 #' @description This function impliments the exploratory method of causal
 #' discovery called the CI (Causal Inference) algorithm of Pearl.
+#' @importFrom utils combn
 #' @param dat A data frame containing the variables for which a partially-
 #' oriented dependency graph is sought.  All variables in this data frame
 #' will be used except for those listed in the nesting= argument; these
@@ -2422,9 +2427,11 @@ declare.family<-function(dat,family=NA,nesting){
 #' default value is write.result = T.
 #' @returns Just the partially-oriented graph output to the screen or
 #' just the adjacency matrix
-#' @examples
-#' CI.algorithm(dat=nested_data,family=c("gaussian","gaussian","gaussian","gaussian"
-#' ),nesting=NA,smooth=TRUE,alpha.reject=0.05)
+#' @examples"
+#' CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
+#' nesting=list(XF=c("year","nest"),XP=c("year","nest"),
+#'             XM=c("year","nest"),XH=c("year","nest"),
+#'             XR=c("year","nest")),smooth=FALSE,alpha.reject=0.05)
 #'
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
