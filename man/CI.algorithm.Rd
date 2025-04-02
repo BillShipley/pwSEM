@@ -53,7 +53,8 @@ This function impliments the exploratory method of causal
 discovery called the CI (Causal Inference) algorithm of Pearl.
 }
 \examples{
-CI.algorithm(dat=nested_data,family=c("gaussian","gaussian","gaussian","gaussian"
-),nesting=NA,smooth=TRUE,alpha.reject=0.05)
-
+CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
+ nesting=list(XF=c("year","nest"),XP=c("year","nest"),
+            XM=c("year","nest"),XH=c("year","nest"),
+            XR=c("year","nest")),smooth=FALSE,alpha.reject=0.05)
 }

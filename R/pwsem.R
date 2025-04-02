@@ -2227,7 +2227,6 @@ make.formula<-function(dat,y,Q,smooth=TRUE){
     }
     stats::formula(for1)
   }
-
 }
 
 random.formula<-function(y,y.levels){
@@ -2251,7 +2250,7 @@ random.formula<-function(y,y.levels){
     y.random<-paste(y.random,"+(1|",as.character(y.levels[[y.level.name]][[i]]),")",
                     sep="")
   }
-  formula(y.random)
+  stats::formula(y.random)
 }
 
 Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
@@ -2427,12 +2426,11 @@ declare.family<-function(dat,family=NA,nesting){
 #' default value is write.result = T.
 #' @returns Just the partially-oriented graph output to the screen or
 #' just the adjacency matrix
-#' @examples"
+#' @examples
 #' CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
-#' nesting=list(XF=c("year","nest"),XP=c("year","nest"),
+#'  nesting=list(XF=c("year","nest"),XP=c("year","nest"),
 #'             XM=c("year","nest"),XH=c("year","nest"),
 #'             XR=c("year","nest")),smooth=FALSE,alpha.reject=0.05)
-#'
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
                         write.result = T)
