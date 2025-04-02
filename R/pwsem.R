@@ -2747,3 +2747,118 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     cgraph
   }
 }
+vanishing.tetrads<-function (dat, sig = 0.05)
+#' @title The vanishing.tetrads function
+#' @description This function implements the vanishing tetrads theorem of
+#' Spirtes, Glymour & Scheines (1993).  If a set of four variables in dat
+#' has a saturated unoriented dependency graph in CI.algorithm, and a
+#' tetrad equation is zero, then this is evidence for a latent variable.
+#' @importFrom utils combn
+#' @param dat A data frame containing the observed variables.  No other
+#' variables can be in this file, such as ones
+#' describing the nesting structure.
+#' @param sig A numerical value between 0 and 1 giving the
+#' significance level to use when judging (conditional) independence.  The
+#' default value is alpha.reject=0.05.
+#' @returns Just output to the screen listing each tetrad equation, its
+#' value and its significance level.
+#' @examples
+#' @export
+vanishing.tetrads<-function (dat, sig = 0.05)
+  #Applies the vanishing tetrad theorem to the data in dat and tests for
+  #zero tetrad equations at a significance level of sig.
+{
+  if(dim(dat)[2]<4)
+    stop("Error in vanishing.tetrads.  You need at least 4 variables")
+  get.3.equations <- function(tet.vector) {
+    mat <- matrix(NA, ncol = 8, nrow = 3)
+    mat[1, ] <- cbind(tet.vector[1], tet.vector[2], tet.vector[3],
+                      tet.vector[4], tet.vector[1], tet.vector[4], tet.vector[2],
+                      tet.vector[3])
+    mat[2, ] <- cbind(tet.vector[1], tet.vector[3], tet.vector[2],
+                      tet.vector[4], tet.vector[1], tet.vector[4], tet.vector[2],
+                      tet.vector[3])
+    mat[3, ] <- cbind(tet.vector[1], tet.vector[3], tet.vector[2],
+                      tet.vector[4], tet.vector[1], tet.vector[2], tet.vector[3],
+                      tet.vector[4])
+    mat
+  }
+  test.stat <- function(dat, triplet) {
+    t.vars <- sort(triplet[1:4])
+    r <- stats::var(dat, na.rm = T)
+    tao <- r[triplet[1], triplet[2]] * r[triplet[3], triplet[4]] -
+      r[triplet[5], triplet[6]] * r[triplet[7], triplet[8]]
+    D13 <- det(r[c(triplet[1], triplet[3]), c(triplet[1],
+                                              triplet[3])])
+    D24 <- det(r[c(triplet[2], triplet[4]), c(triplet[2],
+                                              triplet[4])])
+    D <- det(r[triplet[1:4], triplet[1:4]])
+    N <- dim(dat)[1]
+    tao.var <- (D13 * D24 * (N + 1)/(N - 1) - D) * (1/(N -
+                                                         2))
+    if (tao.var <= 0) {
+      stop("ERROR in vanishing.tetrads; tao.var<0")
+    }
+    z <- tao/sqrt(tao.var)
+    list(triplet = triplet, VCV = r, tao = tao, tao.var = tao.var,
+         z = z, prob = 2 * (1 - pnorm(abs(z))))
+  }
+  get.choke.points <- function(vec) {
+    tetrad <- matrix(vec, ncol = 2, byrow = T)
+    all.comb <- cbind(c(vec[1], vec[1], vec[1], vec[2], vec[2],
+                        vec[3]), c(vec[2], vec[3], vec[4], vec[3], vec[4],
+                                   vec[4]))
+    chokes <- rep(T, 6)
+    for (j in 1:4) {
+      for (i in 1:6) {
+        if (sum(tetrad[j, ] == all.comb[i, c(1, 2)]) ==
+            2)
+          chokes[i] <- F
+        if (sum(tetrad[j, ] == all.comb[i, c(2, 1)]) ==
+            2)
+          chokes[i] <- F
+      }
+    }
+    list(tetrad = tetrad, all.comb = all.comb, choke.points = all.comb[chokes,
+    ])
+  }
+  nvars <- dim(dat)[2]
+  tetrad.quadriplets <- utils::combn(1:nvars, 4)
+  ntetrads <- dim(tetrad.quadriplets)[2]
+  z <- prob <- rep(NA, ntetrads * 3)
+  count <- 0
+  for (i in 1:ntetrads) {
+    triplets <- get.3.equations(tetrad.quadriplets[, i])
+    for (j in 1:3) {
+
+      count <- count + 1
+      temp <- test.stat(dat, triplets[j, ])
+      z[count] <- temp$z
+      prob[count] <- temp$prob
+      if (prob[count] <= sig){
+        cat("triplet(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
+            triplets[j,4],")-","(",triplets[j,5],",",triplets[j,6],")*",
+            "(",triplets[j,7],",",triplets[j,8],")",sep="")
+        cat(" does not vanish (p=", prob[count], ") \n\n")
+
+      }
+      if (prob[count] > sig) {
+        chokes <- get.choke.points(triplets[j, ])
+
+        cat("triplet(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
+            triplets[j,4],")-","(",triplets[j,5],",",triplets[j,6],")*",
+            "(",triplets[j,7],",",triplets[j,8],")",sep="")
+        cat(" vanishes (p=", prob[count], ") \n")
+        cat("If there is a saturated dependency graph for these four variables ",
+            "(via CI.algorithm) then there is at least one latent common cause of either, or both of,",
+            "variables (",chokes$choke.points[1, 1], ",", chokes$choke.points[1, 2],
+            ") and of either, or both of, variables (", chokes$choke.points[2, 1], ",",
+            chokes$choke.points[2, 2], ")\n",sep="",fill=TRUE)
+        #        cat("then there is at least one latent common cause of either (",
+        #            chokes$choke.points[1, 1], ",", chokes$choke.points[1, 2],
+        #           ") and of either (", chokes$choke.points[2, 1], ",",
+        #            chokes$choke.points[2, 2], ")\n",sep="",fill=TRUE)
+      }
+    }
+  }
+}
