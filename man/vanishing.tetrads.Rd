@@ -13,7 +13,7 @@ describing the nesting structure.}
 
 \item{sig}{A numerical value between 0 and 1 giving the
 significance level to use when judging (conditional) independence.  The
-default value is alpha.reject=0.05.}
+default value is 0.05.}
 }
 \value{
 Just output to the screen listing each tetrad equation, its
@@ -26,11 +26,14 @@ has a saturated unoriented dependency graph in CI.algorithm, and a
 tetrad equation is zero, then this is evidence for a latent variable.
 }
 \examples{
-#determines which of the three tetrad equations are zero in this data set
+#Determines which of the three tetrad equations are zero in this data set
 #having 500 observations and 4 variables.  Since this set of 4 variables
 #has a saturated partially oriented dependency graph, the tetrad equations
 #that are zero (i.e. vanish) identify where latent variables occur that
 #are common causes of these variables
+#Check if these 4 variables form a saturated partially oriented dependency
+#graph:
 CI.algorithm(sim_tetrads)
+#Since this is a saturated partially oriented dependency graph:
 vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 }

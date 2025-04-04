@@ -2747,7 +2747,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     cgraph
   }
 }
-vanishing.tetrads<-function (dat, sig = 0.05)
+
 #' @title The vanishing.tetrads function
 #' @description This function implements the vanishing tetrads theorem of
 #' Spirtes, Glymour & Scheines (1993).  If a set of four variables in dat
@@ -2759,22 +2759,26 @@ vanishing.tetrads<-function (dat, sig = 0.05)
 #' describing the nesting structure.
 #' @param sig A numerical value between 0 and 1 giving the
 #' significance level to use when judging (conditional) independence.  The
-#' default value is alpha.reject=0.05.
+#' default value is 0.05.
 #' @returns Just output to the screen listing each tetrad equation, its
 #' value and its significance level.
 #' @examples
-#' #determines which of the three tetrad equations are zero in this data set
+#' #Determines which of the three tetrad equations are zero in this data set
 #' #having 500 observations and 4 variables.  Since this set of 4 variables
 #' #has a saturated partially oriented dependency graph, the tetrad equations
 #' #that are zero (i.e. vanish) identify where latent variables occur that
 #' #are common causes of these variables
+#' #Check if these 4 variables form a saturated partially oriented dependency
+#' #graph:
 #' CI.algorithm(sim_tetrads)
+#' #Since this is a saturated partially oriented dependency graph:
 #' vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 #' @export
 vanishing.tetrads<-function (dat, sig = 0.05)
   #Applies the vanishing tetrad theorem to the data in dat and tests for
   #zero tetrad equations at a significance level of sig.
 {
+
   if(dim(dat)[2]<4)
     stop("Error in vanishing.tetrads.  You need at least 4 variables")
   get.3.equations <- function(tet.vector) {
@@ -2833,6 +2837,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
   tetrad.quadriplets <- utils::combn(1:nvars, 4)
   ntetrads <- dim(tetrad.quadriplets)[2]
   z <- prob <- rep(NA, ntetrads * 3)
+
   count <- 0
   for (i in 1:ntetrads) {
     triplets <- get.3.equations(tetrad.quadriplets[, i])
