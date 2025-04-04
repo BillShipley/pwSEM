@@ -2763,6 +2763,13 @@ vanishing.tetrads<-function (dat, sig = 0.05)
 #' @returns Just output to the screen listing each tetrad equation, its
 #' value and its significance level.
 #' @examples
+#' #determines which of the three tetrad equations are zero in this data set
+#' #having 500 observations and 4 variables.  Since this set of 4 variables
+#' #has a saturated partially oriented dependency graph, the tetrad equations
+#' #that are zero (i.e. vanish) identify where latent variables occur that
+#' #are common causes of these variables
+#' CI.algorithm(sim_tetrads)
+#' vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 #' @export
 vanishing.tetrads<-function (dat, sig = 0.05)
   #Applies the vanishing tetrad theorem to the data in dat and tests for
@@ -2801,7 +2808,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
     }
     z <- tao/sqrt(tao.var)
     list(triplet = triplet, VCV = r, tao = tao, tao.var = tao.var,
-         z = z, prob = 2 * (1 - pnorm(abs(z))))
+         z = z, prob = 2 * (1 - stats::pnorm(abs(z))))
   }
   get.choke.points <- function(vec) {
     tetrad <- matrix(vec, ncol = 2, byrow = T)

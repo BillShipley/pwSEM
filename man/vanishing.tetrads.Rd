@@ -25,3 +25,12 @@ Spirtes, Glymour & Scheines (1993).  If a set of four variables in dat
 has a saturated unoriented dependency graph in CI.algorithm, and a
 tetrad equation is zero, then this is evidence for a latent variable.
 }
+\examples{
+#determines which of the three tetrad equations are zero in this data set
+#having 500 observations and 4 variables.  Since this set of 4 variables
+#has a saturated partially oriented dependency graph, the tetrad equations
+#that are zero (i.e. vanish) identify where latent variables occur that
+#are common causes of these variables
+CI.algorithm(sim_tetrads)
+vanishing.tetrads(dat=sim_tetrads,sig=0.05)
+}
