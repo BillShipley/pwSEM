@@ -2308,7 +2308,7 @@ Pcor.prob <- function(dat, x, y, Q,reduced.x,reduced.y,reduced.Q,
                         random=random.formula(y=reduced.x,y.levels=nesting),
                         family=family[,reduced.x],data=dat)
     #I think that$mer  this is correct because it produces the same t-value
-    #as when using the glmer function
+    #as when using the glmer function but this ignores smoother effects!
     res.x<-stats::residuals(fit.x$mer,type="response")
     fit.y<-gamm4::gamm4(formula=make.formula(dat=dat,y=y,Q=Q,smooth=smooth),
                         random=random.formula(y=reduced.y,y.levels=nesting),
@@ -2624,6 +2624,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
       #unshielded pattern: (2)--(3)--(1)
     }
     if (outer1 > 0 & outer2 > 0 & inner > 0) {
+
       flag <- 1
       #flag=1 means a definite collider
       #start off with triplet being a definite collider
@@ -2641,6 +2642,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
 
       colQ<-full.data.column.number(inner,full.dat=dat,
                                     reduced.dat=reduced.dat)
+
       p <- Pcor.prob(dat=dat,x = col1, y = col2, reduced.x=outer1,
                      reduced.y=outer2,Q = colQ,reduced.Q=inner,
                      family=family, nesting=nesting,smooth=smooth)
