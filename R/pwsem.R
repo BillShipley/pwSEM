@@ -2434,6 +2434,7 @@ declare.family<-function(dat,family=NA,nesting){
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
                         write.result = T)
+  #
   #The same as the Causal.Inference function in CauseAndCorrelation, except
   #that the Pcor.prob function is changed to use the Generalized Covariance
   #statistic and allows for glm and glmm with smoothers
