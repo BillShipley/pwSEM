@@ -2427,6 +2427,9 @@ declare.family<-function(dat,family=NA,nesting){
 #' @returns Just the partially-oriented graph output to the screen or
 #' just the adjacency matrix
 #' @examples
+#' #Remove column 3 because it is not to be included in the partially
+#' #oriented dependency graph and it is not one of the nesting variables
+#' #(year, nest)
 #' CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
 #'  nesting=list(XF=c("year","nest"),XP=c("year","nest"),
 #'             XM=c("year","nest"),XH=c("year","nest"),
