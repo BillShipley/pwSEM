@@ -1,0 +1,244 @@
+---
+title: "pwSEM"
+author: "Bill Shipley"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{pwSEM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(pwSEM)
+```
+# Introduction
+The pwSEM package contains functions for conducting piecewise structural equation modelling (SEM).  There are six main functions that users will typically use.Only pwSEM() is required unless you want to conduct each of the steps in the dsep test yourself and then separately estimate the free parameters of the structural equations.
+pwSEM() is the main program that is used to test piecewise structural equations (thus,the name pwSEM).
+generalized.covariance() and perm.generalized.covariance() perform the generalized covariance test (for large sample sizes) or its permutation version (for small sample sizes).
+view.paths() is a function allowing you to visually see how indirect effects along different paths vary given their original units when some structural equations are nonlinear and estimated using regression smoothers or are estimated using generalized linear (mixed) models with non-gaussian distributions.
+MCX2() is a function that uses Monte Carlo methods to more accurately estimate the null probability of the Maximum Likelihood Chi-Squared fit statistic with small sample sizes.
+CI.algorithm() impliments Judea Pearl's Causal Inference algorithm for exploratory SEM.
+vanishing.tetrads() impliments  Spirtes, Glymour and Scheines test of zero tetrad equations to detect the presence of latent variables in a set of 4 or more observed variables.
+
+## Some technical details
+1. The null probabilities associated with each of the d-separation claims in the union basis set of your causal model are based on the generalized covariance statistic of Shah, R.D. & Peters, J. (2020)  (The hardness of conditional independence testing and the generalized covariance measure.  The Annals of Statistics 48:1514-1538).  The generalized.covariance() function of this package calculates this statistic and its asymptotic null probability.  A permutation version of this test is available in the perm.generalized.covariance() function for small data sets (<= about 100 observations).
+
+2. Given a d-separation claim: X1 _||_X2|{C}, where C is the set of causal parents of either X1 or X2,  the generalized covariance statistic consists of conducting two regressions, X1~C and X2~C, getting the "response" residuals (which are **not** the default type of residuals for gam or gamm4) from these two regressions, and then inputting these two vectors of residuals to calculate the generalized covariance statistic.  These regressions can be of any type that are appropriate given the nature of the dependent variables (X1, X2) and the assumed functional form linking them to the causal parents, including mixed, generalized, generalized mixed, additive, generalized additive or generalized additive mixed regressions.  Note that mixed model regressions can only include random intercepts in this version and so you should not use pwSEM() or CI.algorithm() in a mixed model context if you think that the values of the path coefficients (i.e. partial slopes) differ greatly between levels of the random components.  The only solution right now is to do the d-separation tests via the generalized.covariance function and then estimate the path coefficients yourself.
+
+3. Although the current version of pwSEM allows for generalized linear or mixed generalized linear fits when testing the d-separation claims, it can also accommodate generalized additive or mixed generalized additive fits when testing the d-separation claims via the "do.smooth=TRUE" argument.  You should do this when you believe that the relationships between the variables are nonlinear beyond what is expected (i.e. beyond an exponential for Poisson variables or a logistic for Binomial variables).  However, the current version of pwSEM uses the default values for smoother terms and it is possible that the default maximum number of knots (i.e. 10) might not be high enough for very nonlinear functions or not enough for very small data sets; in this case an error message will be produced.  The only solution right now is to do the d-separation tests outside of pwSEM via the generalized.covariance function.
+
+4. If all of the variables in your SEM are normally distributed, then you can also obtain the fits based on standardized variables, resulting in standardized path coefficients.  If any of your variables assume a non-normal distribution then standardized fits are not returned.
+
+5. Optionally, the  dependent errors ("free covariances") between pairs of observed variables that are the causal children of implicitly marginalized latents or causal parents of implicitly conditioned latents are calculated.  This is either a covariance and Pearson correlation for normally distributed variables, or a Spearman correlation otherwise; these are based on the "response" residuals' i.e. based on the actual (observed - predicted) values of the original variables.
+
+6. The AIC statistic is calculated using the structural equations specified in the equivalent MAG if the equivalent MAG differs from your original causal model.  The AIC statistic is given in Shipley, B. & Douma, J.(2020). Generalized AIC and chi-squared statistics for path models consistent with directed acyclic graphs.  Ecology 101:e02960.  If there are correlated errors in your model, then the likelihood of the correlated errors is based on a normal copula function.
+
+7.  Mixed models involving beta-distributed variables in the structural equations are not currently supported
+
+## pwSEM
+There are three main steps required to fit and output the results of a piecewise SEM:
+
+1. Create a list containing all of the structural equations, following your causal hypothesis (DAG or MAG).  Any dependent errors or selection bias are not included in this first step.  **Note  that you must also include the structural equations for all of the exogenous variables; i.e. X~1.  People often forget this and, if you do, it will result in an error message**.  These structural equations are constructed using either the gam() or the gamm4() functions of the mgcv package; see Wood, S.N. (2017).  Generalized Additive Models: An introduction with R (2nd edition).  CRC Press (Chapman & Hall).
+
+2. Create output from the pwSEM() function by inputting (1) your list (from step 1), (2) a list of pairs of variables that are common causal children of implicitly marginalized latents (i.e. dependent errors, if any), (3) a list of pairs of variables that are common causal parents of implicitly conditioned latents (i.e. selection bias, if any),  (4) the data set that will be used to fit the data (this must be the same as given inside the gam or gamm4 calls from step 1),  (5) whether you want to use asymptotic probabilities of the d-separation claims or permutation probabilities (for small sample sizes of approximately <100), and (6) how many permutations you require (defaults to 5000).  Note that permutation probabilities will slow down the pwSEM() function.
+
+3. The output from step 2 contains many objects resulting from the fit, but it is more convenient to use the summary() function to output the results.  Use the argument "structural.equations=TRUE" if you also want the fits of the structural equations to be output.
+
+There is also one optional step if you want to visually view the effects of variables along different paths.  If all of your variables are normally distributed (i.e. family=gaussian) and the relationships between the variables are all linear, then you can easily obtain the effects of variables along different paths using the basic rules of combining path coefficients: multiply the path coefficients (i.e. slopes of the regressions) along a directed path.  For instance, if you have X-(a)->Y-(b)->Z, where a and b are the slopes of the two regressions (Y~X and Z~Y) then the effect of X on Z along this path is a*b.  However, if you have allowed the relationships between the variables to be potentially nonlinear via a smoother term in gam or gamm4 (for example, Y~s(X)) then the relationship between the variables is nonlinear and the effect (i.e. the 1st derivative of the function) is not constant.  You can't talk about a path "coefficient" because the slope (the 1st derivative) changes with the values of the independent variable.  Note also that if any of the endogenous variables along the path are non-normal (for example, using family=poisson) then the effect (the slope) is constant when the dependent variable is transformed by its link function (a ln(Y) transform if family=poisson), the effect is not constant if you consider the dependent variable in its original scale.
+Therefore, to view the relationship between two variables along any path in the DAG, you can use the view.paths() function in this package, which will produce a graph showing the relationship between the two variables and a graph showing the (approximate) effect for different values of the independent variable.
+
+Here is the pwSEM function:
+
+pwSEM(sem.functions,marginalized.latents = NULL, conditioned.latents = NULL, data,use.permutations = FALSE,n.perms = 5000,do.smooth = FALSE,all.grouping.vars = NULL)
+
+**Arguments**
+
+*sem.functions*: 	A list giving the gamm4 (gamm4 package) or gam (mgcv package) models associated with each variable in the sem, INCLUDING exogenous variables.
+
+*marginalized.latents*:	A list giving any dependent errors between pairs of observed variables that are generated by common marginalized latents ("free covariance" in covariance-based SEM).  Each element of this list is a pair of variables whose errors are hypothesized to be dependent (i.e. they have some unknown common cause) separated by two tildes (~). For example: list(X~~Y).
+
+*conditioned.latents*:	A list giving any dependent errors between pairs of observed variables that are generated by being common causal parents of common conditioned latents ("selection bias").  Each element of this list is a pair of variables whose errors are hypothesized to be dependent (i.e. they have some unknown common cause) separated by two tildes (~). For example: list(X~~Y).
+
+*data*: 	A data frame containing the empirical data.
+
+*use.permutations*:	A logical value (TRUE, FALSE) indicating if you want to use permutation probabilities for the d-separation tests. Defaults to FALSE. You should use TRUE for smaller data sets.
+
+*n.perms*:	The number of permutation runs to use for permutation probabilities. Defaults to 5000.
+
+*do.smooth*:	A logical value indicating if you want to use regression smoothers (generalized additive models) for the dsep tests. Defaults to FALSE. TRUE will fit nonlinear (regression smoothers) when evaluating the d-separation claims, but this will slow down the function.
+
+*all.grouping.vars*:	A character vector giving the names of all variables involved in the sem functions that define groups for random effects.  NULL if there is no random component to any of the variables.
+
+**Returns**: A list containing the following elements: causal.graph, dsep.equivalent.causal.graph, basis.set, dsep.probs, sem.functions,C.statistic, prob.C.statistic, AIC, n.data.lines, use.permutations, n.perms
+
+### Example 1: dependent endogenous errors, normally distributed variables and no nesting structure in the data
+
+Consider first a causal hypothesis in which X1-->X2-->X3-->X4 and with dependent errors between X2 and X4 due to a common implicitly marginalized latent cause.  If we assume that all four variables are normally distributed, linearly related, and with mutually independent observations (i.e. no nesting structure that would require a mixed model formulation), then we can model the structural equations using the gam() function of the mgcv package without any smoother terms.  For instance, the first link (X1-->X2) would be modelled as gam(X2~X1,data=...,family=gaussian).  This version of gam is equivalent to the lm() function that is well-known to R users: lm(X2~X1,data=...).  As a note, if you believe that the functional relationship between X2 and X1 is nonlinear, you could instead model this as gam(X2~s(X1),data=...,family=gaussian).  The pwSEM() function will accommodate this formulation but cannot include more complicated formulations like changing the number of knots, for example gam(X2~s(X1,k=4),data=...,family=gaussian).  
+
+Here are the three steps, using the "sim_normal.no.nesting" data set that is included with the pwSEM package:
+
+
+
+STEP 1: Create a list containing the structural equations
+
+```{r}
+my.list<-list(mgcv::gam(X1~1,data=sim_normal.no.nesting,family=gaussian),
+         mgcv::gam(X2~X1,data=sim_normal.no.nesting,family=gaussian),
+         mgcv::gam(X3~X2,data=sim_normal.no.nesting,family=gaussian),
+         mgcv::gam(X4~X3,data=sim_normal.no.nesting,family=gaussian))
+```
+
+
+Notice that the first model in the list is for X1, which is an exogenous variable.  Since X1 is not caused by any other observed variable, it has no predictor variables and so only includes the intercept.  YOU MUST ALWAYS EXPLICITLY INCLUDE ALL OF THE EXOGENOUS VARIABLES IN THIS WAY.
+
+STEP 2: call the pwSEM function
+
+```{r}
+out<-pwSEM(sem.functions=my.list,
+    marginalized.latents=list(X4~~X2), data=sim_normal.no.nesting,use.permutations = TRUE,n.perms=5000,do.smooth=FALSE,all.grouping.vars = NULL)
+```
+
+The first argument gives the list containing the structural equations.
+
+The second argument gives a list containing any dependent errors using the ~~ operator to specify these.  In our example there are dependent errors between X4 and X2.  If this argument is not given then the default is to assume no dependent errors.  If there are more than one pair of dependent errors then you would include each in the list, separated by a comma.
+
+Note that the  conditioned.latents= argument is missing in this example; by default, both the marginalized.latents= and marginalized.latents= arguments have a NULL value.
+
+The next argument gives the name of the data set to be used when fitting the structural equations and this must the same name as specified in step 1.
+
+The next argument specifies if you want to use the asymptotic probability values of the generalized covariance statistic (the default) or the permutation probabilities.
+
+The next argument gives the number of permutations required for the permutation version (defaults to 5000).
+
+The next argument takes a logical value (TRUE/FALSE) specifying if you want to use regression smoothers (thus generalized additive or mixed generalized additive models) when getting the residuals for the d-separation tests.  The default is FALSE.  Note that only the default number of knots chosen by gam() or gamm4() can be used by pwSEM, and this might throw up an error message. 
+
+STEP 3: call the summary
+
+```{r}
+summary(out,structural.equations=TRUE)
+```
+
+
+This outputs the causal graph and (if it differs from the original causal graph) the equivalent MAG.  Next are the d-separation claims of the union basis set and then the  null probabilities of each d-separation claim. Next are the Fisher's C statistic,  its degrees of freedom and associated null probability, and the AIC statistic.
+If you include the argument "structural.equations=TRUE" then the fitted regressions of the structural equations are also output.  If all of the variables are normally distributed (as is the case here) then the standardized versions of the structural equations are also output. Note that, when the equivalent MAG or DAG differs from the original causal graph (as happens in this example), the structural equation of the equivalent graph is output and the added terms in the equivalent structural equation are noted in the output.  When reporting and interpreting the SEM you would ignore the slopes of these added terms.
+Finally, if there are dependent errors, then the covariances and Pearson correlations of these dependent errors are output if the variables are normally distributed (as is the case in this example) or the Spearman correlations otherwise.
+
+### Example 2: dependent endogenous errors  from marginalized latents, Poisson distributed variables and no nesting structure in the data
+
+The only difference with the first example is in changing the "family=" argument in the gam() function.  Everything else remains the same.
+```{r}
+my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
+         mgcv::gam(X2~X1,data=sim_poisson.no.nesting,family=poisson),
+         mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson),
+         mgcv::gam(X4~X3,data=sim_poisson.no.nesting,family=poisson))
+out<-pwSEM(sem.functions=my.list,
+           marginalized.latents=list(X4~~X2),   data=sim_poisson.no.nesting,use.permutations = TRUE,n.perms=10000)
+summary(out,structural.equations=TRUE)
+```
+Since each dependent variable in the model is now Poisson distributed, the slopes of the structural equations are for the ln-transformed values since this is the link function for Poisson distributed variables in a generalized linear model.  If you want to express the structural equations in the original scale of these variables, you must back-transform.  For example, the second structural equation is (implicitly) ln(X2)=0.25+0.17X1 even though the ln-transform isn't explicit.  To get this structural equation in the original scale of X2 you would do: exp(0.25)*exp(0.17X1).
+Note that the Spearman correlation between the residuals of X4 and X2 (on their original scale) is reported rather than a covariance and a Pearson correlation since the variables are not normally distributed.
+
+To see the effect of X1 on X4  along all possible directed paths from X1 to X4 (there is only one such path in this example),you could use the view.paths() function:
+
+
+`view.paths(from="X1",to="X4",sem.functions=out$sem.functions,data=sim_poisson.no.nesting,scale="response",dag=out$causal.graph)`
+
+Type `help("view.graphs")` for more information on using this function.
+
+### Example 3: dependent errors involving endogenous variables, normally-distributed data and with a 2-level grouping structure and using smoothing splines for the d-separation tests
+
+This third example uses generalized linear mixed models via the gamm4() function of the mgcv package.  In this case, your data set must include variables that give the random components of the model, thus the nesting structure.  In these data, there are two random components, between groups and within groups, and there is a variable in the data set called "groups" that gives the group to which each observation belongs.  You must also now include the "all.grouping.vars=" argument in the pwSEM() function, giving all of the variables that define the random component (since different variables might have different random components).  
+Furthermore, in this example, we allow potentially nonlinear functions, via generalized additive mixed models, to test the d-separation claims via the "do.smooth=TRUE" argument.  
+```{r}
+my.list<-list(gamm4::gamm4(X1~1,random=~(1|group),data=sim_normal.with.nesting,family=gaussian),
+         gamm4::gamm4(X2~X1,random=~(1|group),data=sim_normal.with.nesting,family=gaussian),
+         gamm4::gamm4(X3~X2,random=~(1|group),data=sim_normal.with.nesting,family=gaussian),
+         gamm4::gamm4(X4~X3,random=~(1|group),data=sim_normal.with.nesting,family=gaussian))
+
+out<-pwSEM(sem.functions=my.list,
+           marginalized.latents=list(X4~~X2),
+   data=sim_normal.with.nesting,use.permutations = TRUE,
+   do.smooth=TRUE,all.grouping.vars=c("group"))
+summary(out,structural.equations=TRUE)
+```
+
+**Using the mgcv package**
+
+Modelling the structural equations in the pwSEM package uses the mgcv package;  see Wood (2017) for complete details of the practice and theory of this package.
+
+Wood, S.N. (2017).  Generalized Additive Models: An introduction with R, 2nd edition.  CRC Press, Taylor & Francis Group. Boca Raton, FL, USA.
+
+The use of the mgcv package, and the two model functions "gam" and "gamm4", allow for a very wide range of models.  If you want linear models, then use "gam" or "gamm4" without any smoother terms.  For example gam(Y~X,...) fits a linear relationship between Y and X while gam(Y~s(X),...) will fit a smoother function that is not linear unless the underlying relationship is truly linear (and you have lots of data).  The smoother operator "s()" can also be used in gamm4.  If you specify distributions other than "gaussian" (i.e. normal) in the family= argument, then you will model non-normal data.  If you want to include a random component to the model (for example, to account for nested data), then use the gamm4 function.
+*Note that not all of the functionality of these two functions is accepted in this version of pwSEM*.  For instance, you can somewhat control the degree of nonlinearity ("wigglyness") of smoother splines via s(X, k=) or other types of smoother splines, but pwSEM cannot accommodate this; instead, it uses the default choice.  If your SEMs are sufficiently complicated to require this, then it is best to do this individually rather than via pwSEM.  Certainly, more complicated modelling of generalized linear and generalized additive models, with or without a random component (i.e. mixed models) requires that you have a good knowledge of this field!
+For instance, fitting models with a Poisson distribution (i.e. family=poisson) can run into problems when there are lots of zero values even though the model might converge without throwing out any error or warning messages.  You could try a zero-inflated version but this is not something for beginners...
+
+
+## generalized covariance function and its permutation version
+
+The pwSEM package also includes two functions to calculate the generalized covariance statistic of and its null probability.  The first is called "generalized.covariance" and the second is called "perm.generalized covariance".
+The first one, generalized.covariance(), produces asymptotic null probabilities based on a standard normal distribution, and is appropriate for larger sample sizes.  How large?  Simulations suggest that you need at least 100 observations, but these simulations are not exhaustive.  However, the permutation version is quite fast and so you can instead use the permutation version if you are in doubt.
+The second one, perm.generalized.covariance(), produces an empirical permutation distribution of the generalized covariance statistic rather than assuming a standard normal distribution. See Manly, B.F.J. (1997) Randomization, Bootstrap and Monte Carlo Methods in Biology, 2nd edition.  Chapman & Hall.  The default number of permutations is 5000, and this should be fine for most situations, but you can change this via the nperm= argument.  The larger the number of permutations, the more precise the probability estimate, but also the longer it takes.
+If we again use the sim_poisson.no.nesting data set, and want to test the conditional independence of X1 and X3, given X2 then here is how to do it.
+
+1.  Get the two vectors of residuals from X1~X2 and X3~X2.
+2.  Call the generalized covariance function.
+```{r}
+R1<-residuals(mgcv::gam(X1~X2,data=sim_poisson.no.nesting,family=gaussian))
+R2<-residuals(mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson))
+generalized.covariance(R1,R2)
+```
+
+If you want to use the permutation version:
+```{r}
+R1<-residuals(mgcv::gam(X1~X2,data=sim_poisson.no.nesting,family=gaussian))
+R2<-residuals(mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson))
+perm.generalized.covariance(R1,R2,nperm=5000)
+```
+
+You will notice that the asymptotic probability, returned from generalized.covariance(), is very close to the permutation estimate  and that the asymptotic probability is well within the 95% confidence intervals.  This is because there are 100 mutually independent observations in this data set but this will not necessarily occur for smaller data sets.
+
+## The view.paths function to graphically visualize how indirect effects
+
+This is a function, usually called after pwSEM, to allow you to visually
+see how one variable causes another in the DAG  along all directed paths
+from the first to the second and to see how the 1st derivative (a path "coefficient" even though it is not necessarily constant) of this relationship
+changes as the "from" variable changes.  For linear relationships, this is a
+constant (the path coefficient).  Here is the view.paths() function:
+
+view.paths(from,to,sem.functions,data,minimum.x=NULL,maximum.x=NULL,scale="response",return.values=FALSE,dag)
+
+You would normally call this function after testing, and fitting, your structural equations model using pwSEM().  Here is an example to graph the indirect effect of X1 on X4.  The graph shows the entire range of the cause if the minimum.x and maximum.x arguments are ommitted; otherwise these arguments specify the minimum and maximum values that you want to see. 
+```{r}
+# DAG: X1->X2->X3->X4 and X2<->X4
+my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
+         mgcv::gam(X2~X1,data=sim_poisson.no.nesting,family=poisson),
+          mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson),
+          mgcv::gam(X4~X3,data=sim_poisson.no.nesting,family=poisson))
+ out<-pwSEM(sem.functions=my.list,marginalized.latents=list(X4~~X2),
+           data=sim_poisson.no.nesting,use.permutations = TRUE,n.perms=10000)
+# To see each of the effects of X1 on X4, we use view.paths() while imputing  # the list of SEM functions, which are in out$sem.functions, and the DAG, 
+# which is in out$causal.graph, that are output from the pwSEM function.
+
+view.paths(from="X1",to="X4",sem.functions=out$sem.functions,data=
+sim_poisson.no.nesting,scale="response",dag=out$causal.graph)
+```
+
+## The vMCX2 function to better estimate the null probability of the maximum likelihood chi-squared statistic in covariance-based SEM with small sample sizes
+
+The maximum likelihood chi-square statistic that is commonly calculated in covariance-based structural equations modelling only asymptotically follows a theoretical Chi-Squared distribution.  With small sample sizes it can deviate enough from the theoretical distribution to make it problematic. This function estimates the empirical probability distribution of the maximum likelihood chi-square statistic (output, for instance, from the lavaan package), given a fixed sample size and degrees of freedom (output, for instance, from the lavaan package), and outputs the estimated null probability given this sample size and degrees of freedom.  Here is the MCX2() function:
+
+MCX2(model.df, n.obs, model.chi.square, n.sim = 10000,plot.result=FALSE)
+
+The n.sim argument gives the number of Monte Carlo simulations requested, and 10000 are usually enough.  The plot.result=TRUE argument will produce a plot showing the Monte Carlo estimate of the sampling distribution along with the theoretical Chi-Squared distribution.
+For instance, if lavaan outputs a X2 value of 9.42 with 4 degrees of freedom, and you only have 15 observations in your data set, then lavaan will output an asymptotic null probability of 0.049.  However, this null probability is biased with small sample sizes.  Here is how to get a better estimate of the null probability:
+```{r}
+MCX2(model.df=4,n.obs=15,model.chi.square=9.42)
+```
+
