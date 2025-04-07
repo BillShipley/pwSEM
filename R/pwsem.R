@@ -2242,10 +2242,16 @@ random.formula<-function(y,y.levels){
   #
   #  $X3
   #  [1] "level1" "level2"
+
   y.level.name<-names(y.levels)[y]
   N.levels<-length(y.levels[[y.level.name]])
   y.random<-paste("~(1|",as.character(y.levels[[y.level.name]][[1]]),")",
                   sep="")
+#If there is only one random term, then return
+if(N.levels==1){
+  return(stats::formula(y.random))
+}
+#If there are more that one random term, then continue
   for(i in 2:(N.levels)){
     y.random<-paste(y.random,"+(1|",as.character(y.levels[[y.level.name]][[i]]),")",
                     sep="")
