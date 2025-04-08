@@ -3,7 +3,7 @@ pwSEM.prepare.data.set<-function(data,grouping.variables=NULL){
   #This function takes an original data set (data), removes any lines with
   #missing values, and sorts it according to the grouping variables.  If there
   #are no grouping variables, it adds a single grouping variable called "group"
-
+  #
   #This line removes lines having any missing values
   data<-data[stats::complete.cases(data),]
   #If there are no grouping variables, then a column called "group" is created
