@@ -518,7 +518,12 @@ get.dag.from.sem<-function(sem.functions){
   n.vars<-length(sem.functions)
   n.list<-rep(NA,n.vars)
   fo<-rep(list(y~x),n.vars)
+  exogenous.variables<-rep(NA,n.vars)
+  exogenous.names<-rep(NA,n.vars)
+  all.var.names<-rep(NA,n.vars)
+  count.exogenous<-0
   for(i in 1:n.vars){
+#Get the formula object for this sem equation...
     if(inherits(sem.functions[i][[1]],"gam"))
       x<-sem.functions[[i]]$formula
     else
@@ -529,8 +534,16 @@ get.dag.from.sem<-function(sem.functions){
            inherits(sem.functions[i][[1]]$mer, "glmerMod"))
           x<-sem.functions[[i]]$gam$formula
         else stop("Error in get.dag.from.sem")
-
+        all.var.names[i]<-as.character(x[2])
+#exogenous variable only, no predictor variables in the model
+        if(x[3]=="1()"){
+          count.exogenous<-count.exogenous+1
+          exogenous.variables[count.exogenous]<-i
+          exogenous.names[count.exogenous]<-as.character(x[2])
+        }
+#If there are endogenous variables, not only the intercept...
         if(x[3]!="1()"){
+#endogenous variable, predictor variables in the model
           n.list[i]<-i
           fo[[i]]<-x
         }
@@ -538,8 +551,35 @@ get.dag.from.sem<-function(sem.functions){
   n.list<-n.list[!is.na(n.list)]
   #  strip.formula removes and smoothing calls like s(x)
   for(i in 1:n.vars)fo[[i]]<-strip.formula(fo[[i]])
-  #Remember this function!
-  do.call(ggm::DAG,args=fo[n.list])
+#  do.call(ggm::DAG,args=fo[n.list])
+
+#The resulting my.dag does not include exogenous variables that
+#don't cause anything; i.e. isolated variables
+#only call if there is at least one effect~cause pair
+#There is at least one effect~cause pair, so create my.dag from DAG()
+#Remember this do.call function!
+
+  if(length(fo[n.list])>0)my.dag<-do.call(ggm::DAG,args=fo[n.list])
+#all variables are isolated, so create my.dag
+  if(length(fo[n.list])==0)my.dag<-matrix(0,n.vars,n.vars,
+                           dimnames=list(all.var.names,all.var.names))
+  exogenous.in.dag<-rep(NA,n.vars)
+  for(i in 1:dim(my.dag)[1]){
+    if(sum(my.dag[,i])==0)exogenous.in.dag[i]<-rownames(my.dag)[i]
+  }
+  exogenous.not.in.dag<-setdiff(exogenous.names,exogenous.in.dag)
+#Add isolated exogenous variables to dag
+  if(length(exogenous.not.in.dag)>0){
+    n.in.dag<-dim(my.dag)[1]
+    for(i in 1:length(exogenous.not.in.dag)){
+      add.zeros<-rep(0,length(exogenous.not.in.dag))
+      my.dag<-rbind(my.dag,add.zeros)
+      rownames(my.dag)[n.in.dag+i]<-exogenous.not.in.dag[i]
+      my.dag<-cbind(my.dag,add.zeros)
+      colnames(my.dag)[n.in.dag+i]<-exogenous.not.in.dag[i]
+    }
+  }
+my.dag
 }
 
 #' basiSet.MAG
@@ -667,9 +707,15 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
         cat(var.names[i],"<->",var.names[j],sep="",fill=T)
       if(object$causal.graph[i,j]==10)
         cat(var.names[i],"---",var.names[j],sep="",fill=T)
-
     }
   }
+#now print out isolated variables in causal.graph
+  for(i in 1:n.vars){
+    if(sum(object$causal.graph[,i])==0 &
+       sum(object$causal.graph[i,])==0)
+      cat(var.names[i],"--- NONE",sep="",fill=T)
+  }
+
   if(any(object$causal.graph!=object$dsep.equivalent.causal.graph)){
     cat("m-separation equivalent DAG or MAG",fill=T)
     for(i in 1:(n.vars-1)){
@@ -682,11 +728,17 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
           cat(var.names[i],"<->",var.names[j],sep="",fill=T)
       }
     }
+    #now print out isolated variables in desp.equivalent.causal.graph
+    for(i in 1:n.vars){
+      if(sum(object$dsep.equivalent.causal.graph[,i])==0 &
+         sum(object$dsep.equivalent.causal.graph[i,])==0)
+        cat(var.names[i],"--- NONE",sep="",fill=T)
+    }
   }
   n<-length(object$basis.set)
   n2<-1:n
   cat("\n")
-  cat("Basis Set","\n")
+  cat("Union Basis Set","\n")
   for(i in 1:n){
     cat("(",n2[i],") ",object$basis.set[[i]][1],"_||_",
         object$basis.set[[i]][2],"| {",object$basis.set[[i]][-c(1,2)],"}",
@@ -1619,17 +1671,25 @@ get.residuals<-function(my.list,dsep,data,do.smooth,
   #returned.
   #data is the data set to be used
   #observed.vars holds the names of all observed variables in MAG
+#
+#returns: list(var.name,family,link,grouping.structure,random)
   info<-set.up.info.for.dsep.regressions(fun.list=my.list,
         all.grouping.vars=all.grouping.vars)
 
   n.vars<-length(info$var.name)
-  if(n.vars!=length(observed.vars))
+  if(n.vars!=length(observed.vars)){
+    print("info")
+    print(info)
+cat("1. sort(observed.vars) passed to function=",sort(observed.vars),"\n")
     stop("You have not modelled all variables in the DAG/MAG.
          You must also explicitly model all exogenous variables")
+  }
   else
-    if(sum(sort(info$var.name)!=sort(observed.vars))>0)
+    if(sum(sort(info$var.name)!=sort(observed.vars))>0){
+cat("2. sort(info$var.name)=",sort(info$var.name)," sort(observed.vars))=",sort(observed.vars),"\n")
       stop("You have not modelled all variables in the DAG/MAG.
          You must also explicitly model all exogenous variables")
+    }
 
   #This holds the variable names and their number in the dag
 
