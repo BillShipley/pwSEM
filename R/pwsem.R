@@ -2920,7 +2920,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
       z[count] <- temp$z
       prob[count] <- temp$prob
       if (prob[count] <= sig){
-        cat("triplet(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
+        cat("tetrad(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
             triplets[j,4],")-","(",triplets[j,5],",",triplets[j,6],")*",
             "(",triplets[j,7],",",triplets[j,8],")",sep="")
         cat(" does not vanish (p=", prob[count], ") \n\n")
@@ -2929,7 +2929,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
       if (prob[count] > sig) {
         chokes <- get.choke.points(triplets[j, ])
 
-        cat("triplet(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
+        cat("tetrad(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
             triplets[j,4],")-","(",triplets[j,5],",",triplets[j,6],")*",
             "(",triplets[j,7],",",triplets[j,8],")",sep="")
         cat(" vanishes (p=", prob[count], ") \n")
@@ -2938,10 +2938,6 @@ vanishing.tetrads<-function (dat, sig = 0.05)
             "variables (",chokes$choke.points[1, 1], ",", chokes$choke.points[1, 2],
             ") and of either, or both of, variables (", chokes$choke.points[2, 1], ",",
             chokes$choke.points[2, 2], ")\n",sep="",fill=TRUE)
-        #        cat("then there is at least one latent common cause of either (",
-        #            chokes$choke.points[1, 1], ",", chokes$choke.points[1, 2],
-        #           ") and of either (", chokes$choke.points[2, 1], ",",
-        #            chokes$choke.points[2, 2], ")\n",sep="",fill=TRUE)
       }
     }
   }
