@@ -2909,7 +2909,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
     list(tetrad = tetrad, all.comb = all.comb, choke.points = all.comb[chokes,
     ])
   }
-
+  v.names<-names(dat)
   nvars <- dim(dat)[2]
   tetrad.quadriplets <- utils::combn(1:nvars, 4)
   ntetrads <- dim(tetrad.quadriplets)[2]
@@ -2924,26 +2924,10 @@ vanishing.tetrads<-function (dat, sig = 0.05)
       temp <- test.stat(dat, triplets[j, ])
       z[count] <- temp$z
       prob[count] <- temp$prob
-      if (prob[count] <= sig){
-        cat("tetrad(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
-            triplets[j,4],")-","(",triplets[j,5],",",triplets[j,6],")*",
-            "(",triplets[j,7],",",triplets[j,8],")",sep="")
-        cat(" does not vanish (p=", prob[count], ") \n\n")
-
-      }
-      if (prob[count] > sig) {
-        chokes <- get.choke.points(triplets[j, ])
-
-        cat("tetrad(",triplets[j,1],",",triplets[j,2],")*","(",triplets[j,3],",",
-            triplets[j,4],")-","(",triplets[j,5],",",triplets[j,6],")*",
-            "(",triplets[j,7],",",triplets[j,8],")",sep="")
-        cat(" vanishes (p=", prob[count], ") \n")
-        cat("If there is a saturated dependency graph for these four variables ",
-            "(via CI.algorithm) then there is at least one latent common cause of either, or both of,",
-            "variables (",chokes$choke.points[1, 1], ",", chokes$choke.points[1, 2],
-            ") and of either, or both of, variables (", chokes$choke.points[2, 1], ",",
-            chokes$choke.points[2, 2], ")\n",sep="",fill=TRUE)
-      }
+        cat("tetrad: (",v.names[triplets[j,1]],",",v.names[triplets[j,2]],")*","(",v.names[triplets[j,3]],",",
+            v.names[triplets[j,4]],")-","(",v.names[triplets[j,5]],",",v.names[triplets[j,6]],")*",
+            "(",v.names[triplets[j,7]],",",v.names[triplets[j,8]],") \n",sep="")
+        cat(" p=", prob[count], " \n\n")
     }
   }
 }
