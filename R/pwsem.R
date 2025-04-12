@@ -2849,10 +2849,12 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
 vanishing.tetrads<-function (dat, sig = 0.05)
   #Applies the vanishing tetrad theorem to the data in dat and tests for
   #zero tetrad equations at a significance level of sig.
+  #Bootstrap probabilities if bootstrap=TRUE, with B bootstrap runs
 {
 
   if(dim(dat)[2]<4)
     stop("Error in vanishing.tetrads.  You need at least 4 variables")
+#
   get.3.equations <- function(tet.vector) {
     mat <- matrix(NA, ncol = 8, nrow = 3)
     mat[1, ] <- cbind(tet.vector[1], tet.vector[2], tet.vector[3],
@@ -2866,6 +2868,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
                       tet.vector[4])
     mat
   }
+#
   test.stat <- function(dat, triplet) {
     t.vars <- sort(triplet[1:4])
     r <- stats::var(dat, na.rm = T)
@@ -2886,6 +2889,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
     list(triplet = triplet, VCV = r, tao = tao, tao.var = tao.var,
          z = z, prob = 2 * (1 - stats::pnorm(abs(z))))
   }
+#
   get.choke.points <- function(vec) {
     tetrad <- matrix(vec, ncol = 2, byrow = T)
     all.comb <- cbind(c(vec[1], vec[1], vec[1], vec[2], vec[2],
@@ -2905,6 +2909,7 @@ vanishing.tetrads<-function (dat, sig = 0.05)
     list(tetrad = tetrad, all.comb = all.comb, choke.points = all.comb[chokes,
     ])
   }
+
   nvars <- dim(dat)[2]
   tetrad.quadriplets <- utils::combn(1:nvars, 4)
   ntetrads <- dim(tetrad.quadriplets)[2]
