@@ -4,7 +4,7 @@
 \alias{vanishing.tetrads}
 \title{The vanishing.tetrads function}
 \usage{
-vanishing.tetrads(dat, sig = 0.05)
+vanishing.tetrads(dat, sig = 0.05, bootstrap = FALSE, B = 1000)
 }
 \arguments{
 \item{dat}{A data frame containing the observed variables.  No other
@@ -14,6 +14,11 @@ describing the nesting structure.}
 \item{sig}{A numerical value between 0 and 1 giving the
 significance level to use when judging (conditional) independence.  The
 default value is 0.05.}
+
+\item{bootstrap}{A logical value specifying if you want bootstrap
+probabilities or not.  Defaults to FALSE}
+
+\item{B}{The number of bootstrap samples required.  Defaults to 1000.}
 }
 \value{
 Just output to the screen listing each tetrad equation, its

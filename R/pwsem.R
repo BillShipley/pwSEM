@@ -2927,7 +2927,7 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
     #  t_vals <- numeric(B)
     for (b in 1:B) {
       sample_idx <- sample(1:n, replace = TRUE)
-      S <- cov(dat[sample_idx, ])
+      S <- stats::cov(dat[sample_idx, ])
 #Get the tetrad values of the three tetrad equations
       for(j in 1:3){
         t_vals[b,j] <- S[ind[j,1],ind[j,2]]*S[ind[j,3],ind[j,4]] -

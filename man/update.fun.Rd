@@ -4,7 +4,7 @@
 \alias{update.fun}
 \title{updates a gamm4 or gam model by adding the terms in "add.terms"}
 \usage{
-update.fun(sem.functions, i, all.grouping.vars, add.terms, data)
+\method{update}{fun}(sem.functions, i, all.grouping.vars, add.terms, data)
 }
 \arguments{
 \item{sem.functions}{a list}

@@ -348,9 +348,11 @@ The resulting partially oriented dependency graph defines a set of equivalent ca
 
 This function tests for tetrad equations that are not significantly different from zero, and implements the vanishing tetrad algorithm of Spirts, P., Glymour, C. and Scheines, P. (1993).  Causation, prediction, and search.  Lecture Notes in Statistics 81.  Springer-Verlag, NY.
 
-If a set of 4 variables has a saturated partially oriented dependency graph, as determined by the CI algorithm, and if a tetrad equation involving these 4 variables is zero, then this requires the presence of a latent (unmeasured) variable.
+If a set of four observed variables has a saturated partially oriented dependency graph, as determined by the CI algorithm, and if all three tetrad equations involving these four variables is zero, then this implies a measurement model in which each of the four observed variables is the causal child of only a single common latent cause.
 
-Note that this algorithm (and the function) assume multivariate normality, mutually independent observations, sufficient sample size (~100) and linearity between the latent and each observed variable.
+Note that this algorithm (and the function) assume multivariate normality, mutually independent observations, sufficient sample size and linearity between the latent and each observed variable. Depending on the numerical strengths of the path coefficients linking each observed variable to the latent cause, the sample size can be quite large (several hundreds).
+
+You should use the bootstrap version of the test for data that are not normally distributed.
 
 Here is the vanishing.tetrads() function:
 
@@ -368,7 +370,7 @@ values assuming multivariate normality.  Bootstrap probabilities do not assume
 multivariate normality and are not asymptotic, but a minimum sample size of
 ~30 is often recommended.
 
-Here is an example using simulated data given the DAG L->Z1, L->X2, L->X3 and X3->X4.  In other words, there is a latent variable (L) that is a common cause of X1, X2 and X3, but not of X4.  First, determine if the partially oriented dependency graph is saturated, using the CI.algorithm() function.  A saturated graph is one in which every variable is joined by a line to every other variable.
+Here is an example using simulated data given the DAG L->Z1, L->X2, L->X3 and L->X4.  In other words, there is a latent variable (L) that is a common cause of X1, X2 and X3, but not of X4.  First, determine if the partially oriented dependency graph is saturated, using the CI.algorithm() function.  A saturated graph is one in which every variable is joined by a line to every other variable.
 
 ```{r}
 CI.algorithm(sim_tetrads)
@@ -378,4 +380,4 @@ Since this graph is saturated, we then test the three possible tetrad equations,
 vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 ```
 
-The second tetrad equation is not significantly different from zero, and identifies the latent variable.
+All three tetrad equations vanish (i.e. are not significantly different from zero), and this result implies a single common latent variable as the causal parent of all four observed variables.
