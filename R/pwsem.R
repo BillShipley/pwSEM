@@ -2832,6 +2832,9 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
 #' @param sig A numerical value between 0 and 1 giving the
 #' significance level to use when judging (conditional) independence.  The
 #' default value is 0.05.
+#' @param bootstrap A logical value specifying if you want bootstrap
+#' probabilities or not.  Defaults to FALSE
+#' @param B The number of bootstrap samples required.  Defaults to 1000.
 #' @returns Just output to the screen listing each tetrad equation, its
 #' value and its significance level.
 #' @examples
@@ -2846,7 +2849,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
 #' #Since this is a saturated partially oriented dependency graph:
 #' vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 #' @export
-vanishing.tetrads<-function (dat, sig = 0.05)
+vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
   #Applies the vanishing tetrad theorem to the data in dat and tests for
   #zero tetrad equations at a significance level of sig.
   #Bootstrap probabilities if bootstrap=TRUE, with B bootstrap runs
@@ -2909,25 +2912,62 @@ vanishing.tetrads<-function (dat, sig = 0.05)
     list(tetrad = tetrad, all.comb = all.comb, choke.points = all.comb[chokes,
     ])
   }
+#From CHATGPT
+  bootstrap_tetrad <- function(dat, ind,B = B) {
+#ind is a 3X8 matrix holding the 8 indices of each of the three tetrad
+#equations.
+#RETURNS: a numeric vector of the bootstrap probabilities of the three
+#tetrad equations.
+    n <- nrow(dat)
+    t_vals<-matrix(NA,nrow=B,ncol=3)
+    #  t_vals <- numeric(B)
+    for (b in 1:B) {
+      sample_idx <- sample(1:n, replace = TRUE)
+      S <- cov(dat[sample_idx, ])
+#Get the tetrad values of the three tetrad equations
+      for(j in 1:3){
+        t_vals[b,j] <- S[ind[j,1],ind[j,2]]*S[ind[j,3],ind[j,4]] -
+          S[ind[j,5],ind[j,6]]*S[ind[j,7],ind[j,8]]
+      }
+    }
+    p_value<-rep(NA,3)
+    for(i in 1:3){
+      p_value[i] <- 2 * min(mean(t_vals[,i] >= 0), mean(t_vals[,i] <= 0))
+    }
+  p_value
+  }
+
   v.names<-names(dat)
   nvars <- dim(dat)[2]
   tetrad.quadriplets <- utils::combn(1:nvars, 4)
   ntetrads <- dim(tetrad.quadriplets)[2]
-  z <- prob <- rep(NA, ntetrads * 3)
+  z <- prob <- boot.prob<-rep(NA, ntetrads * 3)
 
   count <- 0
   for (i in 1:ntetrads) {
+#this returns a matrix in which each of 3 rows is one of the three tetrad
+#equations and each of the 8 columns are the column numbers in the data
+#set that that correspond to the 8 indices of the correlation coefficients
+#in the tetrad equation.
     triplets <- get.3.equations(tetrad.quadriplets[, i])
+    if(bootstrap)bs<-bootstrap_tetrad(dat=dat, ind=triplets,B = B)
+
     for (j in 1:3) {
 
       count <- count + 1
       temp <- test.stat(dat, triplets[j, ])
       z[count] <- temp$z
       prob[count] <- temp$prob
+
         cat("tetrad: (",v.names[triplets[j,1]],",",v.names[triplets[j,2]],")*","(",v.names[triplets[j,3]],",",
             v.names[triplets[j,4]],")-","(",v.names[triplets[j,5]],",",v.names[triplets[j,6]],")*",
             "(",v.names[triplets[j,7]],",",v.names[triplets[j,8]],") \n",sep="")
-        cat(" p=", prob[count], " \n\n")
+        if(!bootstrap)cat(" p=", prob[count], " \n\n")
+        if(bootstrap){
+           if(bs[j]<0)cat("bootstrap p=",bs[j],"\n\n")
+          if(bs[j]==0)cat("bootstrap p<",1/B,"\n\n")
+
+        }
     }
   }
 }
