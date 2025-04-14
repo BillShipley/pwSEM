@@ -2874,16 +2874,20 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
 #
   test.stat <- function(dat, triplet) {
     t.vars <- sort(triplet[1:4])
+#r is the covariance matrix of the full data set
     r <- stats::var(dat, na.rm = T)
+#tetrad value (tao)
     tao <- r[triplet[1], triplet[2]] * r[triplet[3], triplet[4]] -
       r[triplet[5], triplet[6]] * r[triplet[7], triplet[8]]
-    D13 <- det(r[c(triplet[1], triplet[3]), c(triplet[1],
-                                              triplet[3])])
-    D24 <- det(r[c(triplet[2], triplet[4]), c(triplet[2],
-                                              triplet[4])])
+#new code from p.102 of Discovering causal structure
+    D12 <- det(r[c(triplet[1], triplet[2]), c(triplet[1],
+                                             triplet[2])])
+    D34 <- det(r[c(triplet[3], triplet[4]), c(triplet[3],
+                                             triplet[4])])
     D <- det(r[triplet[1:4], triplet[1:4]])
     N <- dim(dat)[1]
-    tao.var <- (D13 * D24 * (N + 1)/(N - 1) - D) * (1/(N -
+#new code from p.102 of Discovering causal structure
+    tao.var <- (D12 * D34 * (N + 1)/(N - 1) - D) * (1/(N -
                                                          2))
     if (tao.var <= 0) {
       stop("ERROR in vanishing.tetrads; tao.var<0")
@@ -2953,7 +2957,6 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
     if(bootstrap)bs<-bootstrap_tetrad(dat=dat, ind=triplets,B = B)
 
     for (j in 1:3) {
-
       count <- count + 1
       temp <- test.stat(dat, triplets[j, ])
       z[count] <- temp$z
@@ -2964,7 +2967,7 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
             "(",v.names[triplets[j,7]],",",v.names[triplets[j,8]],") \n",sep="")
         if(!bootstrap)cat(" p=", prob[count], " \n\n")
         if(bootstrap){
-           if(bs[j]<0)cat("bootstrap p=",bs[j],"\n\n")
+           if(bs[j]!=0)cat("bootstrap p=",bs[j],"\n\n")
           if(bs[j]==0)cat("bootstrap p<",1/B,"\n\n")
 
         }
