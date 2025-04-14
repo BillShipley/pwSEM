@@ -354,13 +354,19 @@ Note that this algorithm (and the function) assume multivariate normality, mutua
 
 Here is the vanishing.tetrads() function:
 
-vanishing.tetrads(dat, sig = 0.05)
+vanishing.tetrads(dat, sig = 0.05, bootstrap=FALSE, B=1000)
 
 **arguments**
 
 *dat*: a data frame or matrix having at least four columns, and containing only numerical values
 
 *sig*: the significance level to be used in the inferential test.
+
+*bootstrap*: a logical value specifying if you want bootstrap null
+probabilities.  This defaults to zero, meaning that you will get asymptotic
+values assuming multivariate normality.  Bootstrap probabilities do not assume
+multivariate normality and are not asymptotic, but a minimum sample size of
+~30 is often recommended.
 
 Here is an example using simulated data given the DAG L->Z1, L->X2, L->X3 and X3->X4.  In other words, there is a latent variable (L) that is a common cause of X1, X2 and X3, but not of X4.  First, determine if the partially oriented dependency graph is saturated, using the CI.algorithm() function.  A saturated graph is one in which every variable is joined by a line to every other variable.
 
