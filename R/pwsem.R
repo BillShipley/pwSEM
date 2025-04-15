@@ -2983,7 +2983,7 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
               "(possibly latent) choke variable \n")
         }
 
-        if(!bootstrap)cat("Asymtotic probability=", prob[count], " \n\n")
+        if(!bootstrap)cat("Asymptotic probability=", prob[count], " \n\n")
         if(bootstrap){
            if(bs[j]!=0)cat("Bootstrap probability=",bs[j],"\n\n")
           if(bs[j]==0)cat("Bootstrap probability<",1/B,"\n\n")
