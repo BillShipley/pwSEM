@@ -2953,21 +2953,40 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
 #set that that correspond to the 8 indices of the correlation coefficients
 #in the tetrad equation.
     triplets <- get.3.equations(tetrad.quadriplets[, i])
+    bs<-NA
     if(bootstrap)bs<-bootstrap_tetrad(dat=dat, ind=triplets,B = B)
     for (j in 1:3) {
+      chokes<-get.choke.points(vec=triplets[j,])
       count <- count + 1
       temp <- test.stat(dat, triplets[j, ])
       z[count] <- temp$z
       prob[count] <- temp$prob
-
         cat("tetrad: (",v.names[triplets[j,1]],",",v.names[triplets[j,2]],")*","(",v.names[triplets[j,3]],",",
             v.names[triplets[j,4]],")-","(",v.names[triplets[j,5]],",",v.names[triplets[j,6]],")*",
             "(",v.names[triplets[j,7]],",",v.names[triplets[j,8]],") \n",sep="")
-        if(!bootstrap)cat(" p=", prob[count], " \n\n")
-        if(bootstrap){
-           if(bs[j]!=0)cat("bootstrap p=",bs[j],"\n\n")
-          if(bs[j]==0)cat("bootstrap p<",1/B,"\n\n")
+        if(prob[count]>=sig){
+          choke.names1<-v.names[chokes$choke.points[1,]]
+          choke.names2<-v.names[chokes$choke.points[2,]]
+          cat("All directed paths going into ",choke.names1[1],"and into ",
+              choke.names1[2],"OR into ",choke.names2[1],"and into ",
+              choke.names2[2],"\n in all treks between the variable pairs",
+              "listed in the tetrad equation pass through the same",
+              "(possibly latent) choke variable \n")
+        }
+        if(bootstrap & bs[j]>=sig){
+          choke.names1<-v.names[chokes$choke.points[1,]]
+          choke.names2<-v.names[chokes$choke.points[2,]]
+          cat("All directed paths going into ",choke.names1[1],"and into ",
+              choke.names1[2],"OR into ",choke.names2[1],"and into ",
+              choke.names2[2],"\n in all treks between the variable pairs",
+              "listed in the tetrad equation pass through the same",
+              "(possibly latent) choke variable \n")
+        }
 
+        if(!bootstrap)cat("Asymtotic probability=", prob[count], " \n\n")
+        if(bootstrap){
+           if(bs[j]!=0)cat("Bootstrap probability=",bs[j],"\n\n")
+          if(bs[j]==0)cat("Bootstrap probability<",1/B,"\n\n")
         }
     }
   }

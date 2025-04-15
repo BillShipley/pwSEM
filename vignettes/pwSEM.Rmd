@@ -380,4 +380,10 @@ Since this graph is saturated, we then test the three possible tetrad equations,
 vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 ```
 
+If you do not want to assume multivariate normality, you can use the bootstrap probabilities, although this takes (slightly) longer to run.  Here is the call with the default 1000 bootstrap runs:
+
+```{r}
+vanishing.tetrads(dat=sim_tetrads,sig=0.05,bootstrap=TRUE,B=1000)
+```
+
 All three tetrad equations vanish (i.e. are not significantly different from zero), and this result implies a single common latent variable as the causal parent of all four observed variables.
