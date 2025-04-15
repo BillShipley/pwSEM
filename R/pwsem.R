@@ -2924,7 +2924,6 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
 #tetrad equations.
     n <- nrow(dat)
     t_vals<-matrix(NA,nrow=B,ncol=3)
-    #  t_vals <- numeric(B)
     for (b in 1:B) {
       sample_idx <- sample(1:n, replace = TRUE)
       S <- stats::cov(dat[sample_idx, ])
@@ -2938,7 +2937,7 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
     for(i in 1:3){
       p_value[i] <- 2 * min(mean(t_vals[,i] >= 0), mean(t_vals[,i] <= 0))
     }
-  p_value
+  return(p_value)
   }
 
   v.names<-names(dat)
@@ -2955,7 +2954,6 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
 #in the tetrad equation.
     triplets <- get.3.equations(tetrad.quadriplets[, i])
     if(bootstrap)bs<-bootstrap_tetrad(dat=dat, ind=triplets,B = B)
-
     for (j in 1:3) {
       count <- count + 1
       temp <- test.stat(dat, triplets[j, ])
