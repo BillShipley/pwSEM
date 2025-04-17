@@ -2977,8 +2977,8 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
         if(bootstrap & bs[j]>=sig){
           choke.names1<-v.names[chokes$choke.points[1,]]
           choke.names2<-v.names[chokes$choke.points[2,]]
-          cat("All directed paths going into ",choke.names1[1],"and into ",
-              choke.names1[2],"OR into ",choke.names2[1],"and into ",
+          cat("All directed paths going into",choke.names1[1],"and into",
+              choke.names1[2],"OR/AND into",choke.names2[1],"and into",
               choke.names2[2],"\n in all treks between the variable pairs",
               "listed in the tetrad equation pass through \n the same",
               "(possibly latent) choke variable \n")
