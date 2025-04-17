@@ -2886,7 +2886,8 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
                                              triplet[4])])
     D <- det(r[triplet[1:4], triplet[1:4]])
     N <- dim(dat)[1]
-#new code from p.102 of Discovering causal structure
+#new code from p.102 of Discovering causal structure and checked with
+#original Wishart paper
     tao.var <- (D12 * D34 * (N + 1)/(N - 1) - D) * (1/(N -
                                                          2))
     if (tao.var <= 0) {
@@ -2964,7 +2965,7 @@ vanishing.tetrads<-function (dat, sig = 0.05,bootstrap=FALSE,B=1000)
         cat("tetrad: (",v.names[triplets[j,1]],",",v.names[triplets[j,2]],")*","(",v.names[triplets[j,3]],",",
             v.names[triplets[j,4]],")-","(",v.names[triplets[j,5]],",",v.names[triplets[j,6]],")*",
             "(",v.names[triplets[j,7]],",",v.names[triplets[j,8]],") \n",sep="")
-        if(prob[count]>=sig){
+        if(prob[count]>=sig & !bootstrap){
           choke.names1<-v.names[chokes$choke.points[1,]]
           choke.names2<-v.names[chokes$choke.points[2,]]
           cat("All directed paths going into ",choke.names1[1],"and into ",
