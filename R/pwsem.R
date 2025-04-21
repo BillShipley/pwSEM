@@ -2427,6 +2427,9 @@ reduced.data.column.number<-function(x,full.dat,reduced.dat){
   #, which includes extra variables indexing the nesting structure,this
   #function gives  the corresponding column number(s) in the reduced data set
   #(reduced.dat).
+  #
+  #if x==NA then return
+  if(any(is.na(x)))return(x)
   full.names<-names(full.dat)
   active.names<-names(reduced.dat)
   x.name<-full.names[x]
@@ -2630,12 +2633,15 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   diag(cgraph) <- rep(0, nvars)
 #get the variable numbers of edges to remove
   remove<-remove.edges(no.edges=edges.to.remove,dat=dat)
+
 #now, remove these edges
   for(i in 1:dim(remove)[1]){
+#if remove==NA then X1==NA and X2==NA
     X1<-reduced.data.column.number(x=remove[i, 1],full.dat=dat,
                             reduced.dat=reduced.dat)
     X2<-reduced.data.column.number(x=remove[i, 2],full.dat=dat,
                                 reduced.dat=reduced.dat)
+#if X1==NA and X2==NA then nothing is removed!
     cgraph[X1,X2]<-cgraph[X2,X1]<-0
   }
   #do.pairs returns a matrix with two rows.  Each column gives the column numbers
