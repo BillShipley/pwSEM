@@ -313,9 +313,9 @@ In this case, although the asymptotic null probability (0.04) from a theoretical
 
 ## The CI.algorithm() function
 
-This function implements the exploratory method of causal discovery called the CI (Causal Inference) algorithm in Pearl, J. (2009). Causality.  Models, reasoning, and inference (2nd edition).  Cambridge University Press.  It uses the patterns of independence and conditional independence in an empirical data set to determine the partially oriented dependency graph that is implied by these patterns of (conditional) independence.  The patterns of independence and conditional independence in an empirical data are obtained using the generalized covariance function, based on either (generalized) linear (mixed) models or (generalized) additive (mixed) models (the default).  Note that if any nesting structure is declared, the random terms in the model are based only on random intercepts; if substantial variation in random slopes do exist, this could result in incorrect output.  Here is the CI.algorithm function:
+This function implements the exploratory method of causal discovery called the CI (Causal Inference) algorithm in Pearl, J. (2009). Causality.  Models, reasoning, and inference (2nd edition).  Cambridge University Press.  It uses the patterns of independence and conditional independence in an empirical data set to determine the partially oriented dependency graph that is implied by these patterns of (conditional) independence.  The patterns of independence and conditional independence in an empirical data are obtained using the generalized covariance function, based on either (generalized) linear (mixed) models or (generalized) additive (mixed) models (the default).  Note that if any nesting structure is declared, the random terms in the model are based only on random intercepts; if substantial variation in random slopes do exist, this could result in incorrect output.  You can include prior knowledge concerning the presence or absence of an undirected edge in the final partially oriented dependency graph using the remove.edges argument.  Here is the CI.algorithm function:
 
-CI.algorithm(dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05, write.result = T)
+CI.algorithm(dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05, remove.edges=NA,write.result = T)
 
 **arguments**
 
@@ -327,7 +327,9 @@ CI.algorithm(dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05, write.re
 
 *smooth*: a logical value stating if (generalized) linear relationships are assumed (smooth=FALSE) or if (generalized) additive (i.e. potentially nonlinear) relationships are assumed.
 
-*alpha.reject*: a numerical value between 0 and 1 giving the probability below which the null hypothesis of a (conditional) independence is rejected.  Small data sets will likely require larger values than 0.05. 
+*alpha.reject*: a numerical value between 0 and 1 giving the probability below which the null hypothesis of a (conditional) independence is rejected.  Small data sets will likely require larger values than 0.05.
+
+*remove.edges*: a character object specifying which pairs of variables a known to not have an edge in the partially oriented dependency graph. For example, remove.edges="X2-X1" means that you know that there cannot be an edge X2o--oX1 in this graph (including arrowheads pointing into either or both of X2 and X1).  In other words, you know that X2 cannot be a causal parent of X1, X1 cannot be a causal parent of X2 and, finally, that X1 and X2 cannot be causal siblings of an unmeasured common cause of both. For more than one forbidden edge, insert a RETURN after each pair.
 
 *write.result*: a logical value.  If write.result=T then the partially oriented dependency graph is written to the screen.  If write.result=F then only a matrix is returned with (i,j)=1 meaning a line joins variables i and j, (i,j)=2 means a line with an arrowhead pointing into j joins variables i and j.
 
@@ -343,6 +345,24 @@ CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial",
 ```
 
 The resulting partially oriented dependency graph defines a set of equivalent causal graphs.  An "o" means that there could be either an arrowhead (> or <) or nothing at this end of the edge. The rules for orienting these edges in equivalent causal graphs apply, as explained in the book.
+
+If you wanted to forbid edges between XF and XM and between XP and XM, you would do this:
+
+```{r}
+nesting.structure<-list(XR=c("year","nest"),XM=c("year","nest"),
+             XH=c("year","nest"),XP=c("year","nest"),
+             XF=c("year","nest"))
+no.edges<-"
+XF-XM
+XP-XM
+"
+
+CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial",
+            XP="poisson"),nesting=nesting.structure,alpha.reject=0.3,
+            edges.to.remove=no.edges,smooth=T)
+```
+
+Note that forbidding edges is a strong causal claim! In this example, you are claiming to know, for example, that XF cannot be a direct cause of XM, XM cannot be a direct cause of MF, and that there is no latent variable that is a direct cause of both XM and XF.
 
 ## The vanishing.tetrads function
 

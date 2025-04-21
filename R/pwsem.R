@@ -2422,6 +2422,20 @@ full.data.column.number<-function(x,full.dat,reduced.dat){
   full.data.col.numbers
 }
 
+reduced.data.column.number<-function(x,full.dat,reduced.dat){
+  #Given the column number(s) (x) of variable(s) in the full data set,
+  #, which includes extra variables indexing the nesting structure,this
+  #function gives  the corresponding column number(s) in the reduced data set
+  #(reduced.dat).
+  full.names<-names(full.dat)
+  active.names<-names(reduced.dat)
+  x.name<-full.names[x]
+  reduced.data.col.numbers<-(1:length(active.names))[active.names%in%x.name]
+  if(length(reduced.data.col.numbers)==0){
+    stop("error in reduced.data.column.number")
+  }
+  reduced.data.col.numbers
+}
 declare.family<-function(dat,family=NA,nesting){
   #dat is the full data set, including any nesting variables declared in "nesting"
   #nesting: a named list giving the nesting variables for that variable
@@ -2618,7 +2632,11 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   remove<-remove.edges(no.edges=edges.to.remove,dat=dat)
 #now, remove these edges
   for(i in 1:dim(remove)[1]){
-    cgraph[remove[i,1],remove[i,2]]<-cgraph[remove[i,2],remove[i,1]]<-0
+    X1<-reduced.data.column.number(x=remove[i, 1],full.dat=dat,
+                            reduced.dat=reduced.dat)
+    X2<-reduced.data.column.number(x=remove[i, 2],full.dat=dat,
+                                reduced.dat=reduced.dat)
+    cgraph[X1,X2]<-cgraph[X2,X1]<-0
   }
   #do.pairs returns a matrix with two rows.  Each column gives the column numbers
   #(in the reduced data set) of pairs variables that are joined by an edge in
