@@ -2486,6 +2486,9 @@ declare.family<-function(dat,family=NA,nesting){
 #' @param alpha.reject A numerical value between 0 and 1 giving the
 #' "significance level" to use when judging (conditional) independence.  The
 #' default value is alpha.reject=0.05.
+#' @param edges.to.remove A character matrix giving the names of the variable
+#' pairs that cannot have an edge between them; i.e. one cannot directly cause
+#' the other.
 #' @param write.result A logical value indicating if you want the resulting
 #' partially-oriented dependency graph to be output to the screen
 #' (write.result = T) or just the adjacency matrix returned as output.  The
@@ -2502,7 +2505,7 @@ declare.family<-function(dat,family=NA,nesting){
 #'             XR=c("year","nest")),smooth=FALSE,alpha.reject=0.05)
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
-                        write.result = T)
+                        edges.to.remove=NA,write.result = T)
   #
   #The same as the Causal.Inference function in CauseAndCorrelation, except
   #that the Pcor.prob function is changed to use the Generalized Covariance
@@ -2549,6 +2552,45 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     z[x] <- z[y] <- 0
     z[z > 0]
   }
+#Function to specify which edges to remove given prior information
+  remove.edges<-function(no.edges,dat){
+    #no.edges is a text object, input like the model object of lavaan,
+    #eg. "X-Y" meaning that there cannot be an edge between variable X and
+    #variable Y, and so this edge must be removed
+    #in the CI.algorithm function before beginning.
+    #The variable names are those in the data frame dat
+    #returns a matrix containing the variables numbers of variable pairs whose
+    #edge must be removed in CI.algorithm before beginning
+    #If no.edges==NA, then returns a matrix (NA,NA)
+    if(any(is.na(no.edges)))return(out<-matrix(c(NA,NA),nrow=1,ncol=2))
+    temp<-unlist(strsplit(no.edges,"\n"))
+    edges<-matrix(NA,nrow=length(temp),ncol=2)
+    flag<-0
+    for(i in 1:length(temp)){
+      temp2<-unlist(strsplit(temp[[i]],"-"))
+      if(is.character(temp2) && length(temp2)==0){
+        stats::cycle
+      }
+      else{
+        edges[i,1]<-temp2[[1]]
+        edges[i,2]<-temp2[[2]]
+      }
+    }
+    edges<-edges[stats::complete.cases(edges),]
+    if(!is.matrix(edges))edges<-matrix(edges,nrow=1,ncol=2)
+    var.names<-names(dat)
+    N<-dim(dat)[2]
+    N.vars<-1:N
+    N2<-N*(N-1)/2
+    out<-matrix(NA,nrow=N2,ncol=2)
+    N.exclude<-dim(edges)[1]
+    for(i in 1:N.exclude){
+      exclude1<-N.vars[var.names==edges[i,1]]
+      exclude2<-N.vars[var.names==edges[i,2]]
+      out[i,]<-c(exclude1,exclude2)
+    }
+    matrix(out[stats::complete.cases(out),],nrow=N.exclude,ncol=2)
+  }
   #start...
 
   #reduced.dat excludes the columns giving the nesting structure
@@ -2569,9 +2611,15 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   cat("This might take a while... \n")
   #start with all variables joined by an edge
   #cgraph doesn't include the nesting variables in the full data set.
-  #Start with a completely saturated graph
+  #Start with a completely saturated graph involving only undirected edges.
   cgraph <- matrix(1, nrow = nvars, ncol = nvars)
   diag(cgraph) <- rep(0, nvars)
+#get the variable numbers of edges to remove
+  remove<-remove.edges(no.edges=edges.to.remove,dat=dat)
+#now, remove these edges
+  for(i in 1:dim(remove)[1]){
+    cgraph[remove[i,1],remove[i,2]]<-cgraph[remove[i,2],remove[i,1]]<-0
+  }
   #do.pairs returns a matrix with two rows.  Each column gives the column numbers
   #(in the reduced data set) of pairs variables that are joined by an edge in
   #cgraph.  Pairs without an edge are columns with zeros.
@@ -2589,6 +2637,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
       #in the full data set, including nesting variables
       col2<-full.data.column.number(do.pairs[2, j],full.dat=dat,
                                     reduced.dat=reduced.dat)
+
       #No conditioning variables, so don't need their column numbers
       p <- Pcor.prob(dat=dat,x = col1, y = col2, reduced.x=do.pairs[1, j],
                      reduced.y=do.pairs[2, j],Q = NA, reduced.Q=NA,

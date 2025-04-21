@@ -10,6 +10,7 @@ CI.algorithm(
   nesting = NA,
   smooth = TRUE,
   alpha.reject = 0.05,
+  edges.to.remove = NA,
   write.result = T
 )
 }
@@ -38,6 +39,10 @@ are assumed.}
 \item{alpha.reject}{A numerical value between 0 and 1 giving the
 "significance level" to use when judging (conditional) independence.  The
 default value is alpha.reject=0.05.}
+
+\item{edges.to.remove}{A character matrix giving the names of the variable
+pairs that cannot have an edge between them; i.e. one cannot directly cause
+the other.}
 
 \item{write.result}{A logical value indicating if you want the resulting
 partially-oriented dependency graph to be output to the screen
