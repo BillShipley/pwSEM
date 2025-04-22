@@ -2503,9 +2503,10 @@ declare.family<-function(dat,family=NA,nesting){
 #' @param alpha.reject A numerical value between 0 and 1 giving the
 #' "significance level" to use when judging (conditional) independence.  The
 #' default value is alpha.reject=0.05.
-#' @param edges.to.remove A character matrix giving the names of the variable
-#' pairs that cannot have an edge between them; i.e. one cannot directly cause
-#' the other.
+#' @param constrained.edges A character object giving the edges that
+#' must be constrained to not exist ("X|Y"),  or X is a causal parent of Y
+#'  ("X->Y") or X and Y have a common latent parent ("X<->Y"). Default is
+#'  constrained.edges=NA (no edges are constrained).
 #' @param write.result A logical value indicating if you want the resulting
 #' partially-oriented dependency graph to be output to the screen
 #' (write.result = T) or just the adjacency matrix returned as output.  The
@@ -2516,13 +2517,18 @@ declare.family<-function(dat,family=NA,nesting){
 #' #Remove column 3 because it is not to be included in the partially
 #' #oriented dependency graph and it is not one of the nesting variables
 #' #(year, nest)
+#' fix.these.edges<-"
+#' XF|XR
+#' XP->XM
+#' "
 #' CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
 #'  nesting=list(XF=c("year","nest"),XP=c("year","nest"),
 #'             XM=c("year","nest"),XH=c("year","nest"),
-#'             XR=c("year","nest")),smooth=FALSE,alpha.reject=0.05)
+#'             XR=c("year","nest")),constrained.edges=fix.these.edges,
+#'             smooth=FALSE,alpha.reject=0.05)
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
-                        edges.to.remove=NA,write.result = T)
+                        constrained.edges=NA,write.result = T)
   #
   #The same as the Causal.Inference function in CauseAndCorrelation, except
   #that the Pcor.prob function is changed to use the Generalized Covariance
@@ -2555,8 +2561,9 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     keep <- rep(1, ncombs)
     #cycle through each possible pairs of variables
     for (i in 1:ncombs) {
-      #if that pair is not joined by an edge, don't count it
-      if (cgraph[com[1, i], com[2, i]] == 0) {
+      #if that pair is not joined by an undirected edge, don't count it
+      if (cgraph[com[1, i], com[2, i]] != 1 &
+          cgraph[com[2, i], com[1, i]] != 1) {
         com[1, i] <- com[2, i] <- 0
       }
     }
@@ -2569,44 +2576,62 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     z[x] <- z[y] <- 0
     z[z > 0]
   }
-#Function to specify which edges to remove given prior information
-  remove.edges<-function(no.edges,dat){
-    #no.edges is a text object, input like the model object of lavaan,
-    #eg. "X-Y" meaning that there cannot be an edge between variable X and
-    #variable Y, and so this edge must be removed
-    #in the CI.algorithm function before beginning.
-    #The variable names are those in the data frame dat
-    #returns a matrix containing the variables numbers of variable pairs whose
-    #edge must be removed in CI.algorithm before beginning
-    #If no.edges==NA, then returns a matrix (NA,NA)
-    if(any(is.na(no.edges)))return(out<-matrix(c(NA,NA),nrow=1,ncol=2))
-    temp<-unlist(strsplit(no.edges,"\n"))
-    edges<-matrix(NA,nrow=length(temp),ncol=2)
-    flag<-0
+#Function to specify which edges to fix given prior information
+  fixed.edges<-function(constrained.edges,cgraph){
+    #constrained.edges is a text object, input like the model object of lavaan,
+    #eg. "X|Y" meaning that there cannot be an edge between variable X and
+    #variable Y, "X->Y" and "X<->Y" mean cause and latent common cause.
+    #used the CI.algorithm function before beginning.
+    #The variable names are those in cgraph, which will be the saturated
+    #dependency graph at the start of CI.algorithm
+    #returns the modifice cgraph with the specified edges
+    #If constrained.edges==NA, then returns the original cgraph
+    if(any(is.na(constrained.edges)))return(cgraph)
+    temp<-unlist(strsplit(constrained.edges,"\n"))
+    var.names<-colnames(cgraph)
+    var.nums<-1:length(var.names)
     for(i in 1:length(temp)){
-      temp2<-unlist(strsplit(temp[[i]],"-"))
-      if(is.character(temp2) && length(temp2)==0){
-        stats::cycle
+      #pattern X|Y
+      if(grepl(pattern="\\|",temp[[i]])){
+        X<-unlist(strsplit(temp[[i]],"\\|"))[1]
+        Y<-unlist(strsplit(temp[[i]],"\\|"))[2]
+        for(irow in 1:dim(cgraph)[1]){
+          for(icol in 1:dim(cgraph)[2]){
+            cgraph[which(var.names==X),which(var.names==Y)]<-0
+            cgraph[which(var.names==Y),which(var.names==X)]<-0
+            break
+          }
+          break
+        }
       }
-      else{
-        edges[i,1]<-temp2[[1]]
-        edges[i,2]<-temp2[[2]]
+      #pattern ->
+      if(grepl(pattern="->",temp[[i]])){
+        X<-unlist(strsplit(temp[[i]],"->"))[1]
+        Y<-unlist(strsplit(temp[[i]],"->"))[2]
+        for(irow in 1:dim(cgraph)[1]){
+          for(icol in 1:dim(cgraph)[2]){
+            cgraph[which(var.names==X),which(var.names==Y)]<-2
+            cgraph[which(var.names==Y),which(var.names==X)]<-0
+            break
+          }
+          break
+        }
+      }
+      #pattern <->
+      if(grepl(pattern="<->",temp[[i]])){
+        X<-unlist(strsplit(temp[[i]],"<->"))[1]
+        Y<-unlist(strsplit(temp[[i]],"<->"))[2]
+        for(irow in 1:dim(cgraph)[1]){
+          for(icol in 1:dim(cgraph)[2]){
+            cgraph[which(var.names==X),which(var.names==Y)]<-2
+            cgraph[which(var.names==Y),which(var.names==X)]<-2
+            break
+          }
+          break
+        }
       }
     }
-    edges<-edges[stats::complete.cases(edges),]
-    if(!is.matrix(edges))edges<-matrix(edges,nrow=1,ncol=2)
-    var.names<-names(dat)
-    N<-dim(dat)[2]
-    N.vars<-1:N
-    N2<-N*(N-1)/2
-    out<-matrix(NA,nrow=N2,ncol=2)
-    N.exclude<-dim(edges)[1]
-    for(i in 1:N.exclude){
-      exclude1<-N.vars[var.names==edges[i,1]]
-      exclude2<-N.vars[var.names==edges[i,2]]
-      out[i,]<-c(exclude1,exclude2)
-    }
-    matrix(out[stats::complete.cases(out),],nrow=N.exclude,ncol=2)
+    return(cgraph)
   }
   #start...
 
@@ -2616,6 +2641,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   #nvars is the number of variables in the reduced data set without nesting
   #variables.
   nvars <- dim(reduced.dat)[2]
+  reduced.var.names<-names(reduced.dat)
   #Check if the number of variables in nesting is the same as in reduced.dat
   if(sum(is.na(nesting))==0 & length(nesting)!=nvars){
     stop("Number of variables in nesting not equal to the number in dat")
@@ -2629,21 +2655,15 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   #start with all variables joined by an edge
   #cgraph doesn't include the nesting variables in the full data set.
   #Start with a completely saturated graph involving only undirected edges.
-  cgraph <- matrix(1, nrow = nvars, ncol = nvars)
+  cgraph <- matrix(1, nrow = nvars, ncol = nvars,dimnames=
+                     list(reduced.var.names,reduced.var.names))
   diag(cgraph) <- rep(0, nvars)
-#get the variable numbers of edges to remove
-  remove<-remove.edges(no.edges=edges.to.remove,dat=dat)
+#fix the specified edges befor beginning.
+  cgraph<-fixed.edges(constrained.edges=constrained.edges,cgraph=cgraph)
+cat("cgraph, after fixed.edges, is\n")
+print(cgraph)
+#Now, cgraph can have 1 (Xo-oY), 2 (X->Y) or 3 (X<->Y)
 
-#now, remove these edges
-  for(i in 1:dim(remove)[1]){
-#if remove==NA then X1==NA and X2==NA
-    X1<-reduced.data.column.number(x=remove[i, 1],full.dat=dat,
-                            reduced.dat=reduced.dat)
-    X2<-reduced.data.column.number(x=remove[i, 2],full.dat=dat,
-                                reduced.dat=reduced.dat)
-#if X1==NA and X2==NA then nothing is removed!
-    cgraph[X1,X2]<-cgraph[X2,X1]<-0
-  }
   #do.pairs returns a matrix with two rows.  Each column gives the column numbers
   #(in the reduced data set) of pairs variables that are joined by an edge in
   #cgraph.  Pairs without an edge are columns with zeros.
@@ -2736,6 +2756,8 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   #Start evaluating the unshielded triplets
   cat("\n")
   cat("Finished undirected dependency graph","\n")
+cat("cgraph before orienting triplets\n")
+print(cgraph)
   cat("Orienting edges...\n\n")
   triplets <- utils::combn(1:nvars, 3)
   n.triplets <- dim(triplets)[2]
@@ -2744,7 +2766,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     outer1 <- inner <- outer2 <- 0
     #Case 1
     if (cgraph[triplets[1, i], triplets[2, i]] > 0 & cgraph[triplets[2, i],
-                                                            triplets[3, i]] > 0 & cgraph[triplets[1, i], triplets[3, i]] == 0) {
+      triplets[3, i]] > 0 & cgraph[triplets[1, i], triplets[3, i]] == 0) {
       outer1 <- triplets[1, i]
       inner <- triplets[2, i]
       outer2 <- triplets[3, i]
@@ -2752,7 +2774,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     }
     #Case 2
     if (cgraph[triplets[1, i], triplets[3, i]] > 0 & cgraph[triplets[1, i],
-                                                            triplets[2, i]] == 0 & cgraph[triplets[3, i], triplets[2, i]] > 0) {
+      triplets[2, i]] == 0 & cgraph[triplets[3, i], triplets[2, i]] > 0) {
       outer1 <- triplets[1, i]
       outer2 <- triplets[2, i]
       inner <- triplets[3, i]
@@ -2760,13 +2782,14 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     }
     #Case 3
     if (cgraph[triplets[1, i], triplets[3, i]] > 0 & cgraph[triplets[1,
-                                                                     i], triplets[2, i]] > 0 & cgraph[triplets[2, i], triplets[3, i]] == 0) {
+      i], triplets[2, i]] > 0 & cgraph[triplets[2, i], triplets[3, i]] == 0) {
       outer2 <- triplets[3, i]
       outer1 <- triplets[2, i]
       inner <- triplets[1, i]
       #unshielded pattern: (2)--(3)--(1)
     }
-    if (outer1 > 0 & outer2 > 0 & inner > 0) {
+#If there is an unshielded pattern involving only undirected edges
+    if (outer1 == 1 & outer2 ==1 & inner == 1) {
 
       flag <- 1
       #flag=1 means a definite collider
@@ -2846,6 +2869,8 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
       }
     }
   }
+cat("cgraph at end\n")
+print(cgraph)
   #function to write out full results, if using alone rather than inside
   #Exploratory.pwSEM
   EPA.write <- function(cgraph, dat) {
@@ -2863,14 +2888,25 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
           count <- count + 1
         if (count > npossible)
           return("ERROR")
+        #Io-oJ
         if (cgraph[i, j] == 1 & cgraph[j, i] == 1) {
           cat(var.names[i], "o--o", var.names[j], "\n")
         }
+        #Io->J
         if (cgraph[i, j] == 2 & cgraph[j, i] == 1) {
           cat(var.names[i], "o->", var.names[j], "\n")
         }
-        if (cgraph[j, i] == 2 & cgraph[i, j] == 1) {
-          cat(var.names[i], "<-o", var.names[j], "\n")
+        #J<-oI
+        if (cgraph[i, j] == 1 & cgraph[j, i] == 2) {
+          cat(var.names[j], "o->", var.names[i], "\n")
+        }
+       #I->J
+        if (cgraph[i, j] == 2 & cgraph[j, i] == 0) {
+          cat(var.names[i], "->", var.names[j], "\n")
+        }
+        #J->I
+        if (cgraph[i, j] == 0 & cgraph[j, i] == 2) {
+          cat(var.names[j], "->", var.names[i], "\n")
         }
         if (cgraph[j, i] == 2 & cgraph[i, j] == 2) {
           cat(var.names[i], "<->", var.names[j], "\n")
