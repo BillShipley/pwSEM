@@ -2660,8 +2660,6 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   diag(cgraph) <- rep(0, nvars)
 #fix the specified edges befor beginning.
   cgraph<-fixed.edges(constrained.edges=constrained.edges,cgraph=cgraph)
-cat("cgraph, after fixed.edges, is\n")
-print(cgraph)
 #Now, cgraph can have 1 (Xo-oY), 2 (X->Y) or 3 (X<->Y)
 
   #do.pairs returns a matrix with two rows.  Each column gives the column numbers
@@ -2756,8 +2754,6 @@ print(cgraph)
   #Start evaluating the unshielded triplets
   cat("\n")
   cat("Finished undirected dependency graph","\n")
-cat("cgraph before orienting triplets\n")
-print(cgraph)
   cat("Orienting edges...\n\n")
   triplets <- utils::combn(1:nvars, 3)
   n.triplets <- dim(triplets)[2]
@@ -2869,8 +2865,6 @@ print(cgraph)
       }
     }
   }
-cat("cgraph at end\n")
-print(cgraph)
   #function to write out full results, if using alone rather than inside
   #Exploratory.pwSEM
   EPA.write <- function(cgraph, dat) {
