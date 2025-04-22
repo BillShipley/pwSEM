@@ -10,7 +10,7 @@ CI.algorithm(
   nesting = NA,
   smooth = TRUE,
   alpha.reject = 0.05,
-  edges.to.remove = NA,
+  constrained.edges = NA,
   write.result = T
 )
 }
@@ -40,9 +40,10 @@ are assumed.}
 "significance level" to use when judging (conditional) independence.  The
 default value is alpha.reject=0.05.}
 
-\item{edges.to.remove}{A character matrix giving the names of the variable
-pairs that cannot have an edge between them; i.e. one cannot directly cause
-the other.}
+\item{constrained.edges}{A character object giving the edges that
+must be constrained to not exist ("X|Y"),  or X is a causal parent of Y
+("X->Y") or X and Y have a common latent parent ("X<->Y"). Default is
+constrained.edges=NA (no edges are constrained).}
 
 \item{write.result}{A logical value indicating if you want the resulting
 partially-oriented dependency graph to be output to the screen
@@ -61,8 +62,13 @@ discovery called the CI (Causal Inference) algorithm of Pearl.
 #Remove column 3 because it is not to be included in the partially
 #oriented dependency graph and it is not one of the nesting variables
 #(year, nest)
+fix.these.edges<-"
+XF|XR
+XP->XM
+"
 CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
  nesting=list(XF=c("year","nest"),XP=c("year","nest"),
             XM=c("year","nest"),XH=c("year","nest"),
-            XR=c("year","nest")),smooth=FALSE,alpha.reject=0.05)
+            XR=c("year","nest")),constrained.edges=fix.these.edges,
+            smooth=FALSE,alpha.reject=0.05)
 }
