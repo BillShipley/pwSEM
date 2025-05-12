@@ -329,7 +329,7 @@ CI.algorithm(dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05, constrai
 
 *alpha.reject*: a numerical value between 0 and 1 giving the probability below which the null hypothesis of a (conditional) independence is rejected.  Small data sets will likely require larger values than 0.05.
 
-*constrained.edges*: a character object specifying which pairs of variables have a priori known edges in the partially oriented dependency graph:  constrained.edges="X2|X1" means that you know that there cannot be an edge between X1 and X2 in this graph, "X2->X1" means that X2 is a direct cause of X1 and "X2<->X1" means that neither X1 nor X2 cause the other, but both share a common latent direct cause.  For more than constrained edge, insert a RETURN after each pair in the character object.  The default is constrained.edges=NA, meaning that no edges are constrained by a priori knowledge.
+*constrained.edges*: a character object specifying which pairs of variables have *a priori* known edges in the partially oriented dependency graph:  constrained.edges="X2|X1" means that you know that there cannot be an edge between X1 and X2 in this graph, "X2->X1" means that X2 is a direct cause of X1 and "X2<->X1" means that neither X1 nor X2 cause the other, but both share a common latent direct cause.  For more than one constrained edge, insert a RETURN after each pair in the character object with the full set of pairs enclosed in quotes.  The default is constrained.edges=NA, meaning that no edges are constrained by *a priori* knowledge.
 
 *write.result*: a logical value.  If write.result=T then the partially oriented dependency graph is written to the screen.  If write.result=F then only a matrix is returned with (i,j)=1 meaning a line joins variables i and j, (i,j)=2 means a line with an arrowhead pointing into j joins variables i and j.
 
@@ -346,7 +346,7 @@ CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial",
 
 The resulting partially oriented dependency graph defines a set of equivalent causal graphs.  An "o" means that there could be either an arrowhead (> or <) or nothing at this end of the edge. The rules for orienting these edges in equivalent causal graphs apply, as explained in the book.
 
-If you wanted to forbid edges between XF and XM (XF|XM) and force XH to directly cause XR, you would do this:
+If you wanted to forbid edges between XF and XM (XF|XM) and also force XH to directly cause XR, you would do this:
 
 ```{r}
 nesting.structure<-list(XR=c("year","nest"),XM=c("year","nest"),
