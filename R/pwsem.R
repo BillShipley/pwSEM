@@ -2584,7 +2584,7 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
     #used the CI.algorithm function before beginning.
     #The variable names are those in cgraph, which will be the saturated
     #dependency graph at the start of CI.algorithm
-    #returns the modifice cgraph with the specified edges
+    #returns the modified cgraph with the specified edges
     #If constrained.edges==NA, then returns the original cgraph
     if(any(is.na(constrained.edges)))return(cgraph)
     temp<-unlist(strsplit(constrained.edges,"\n"))
@@ -2595,6 +2595,10 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
       if(grepl(pattern="\\|",temp[[i]])){
         X<-unlist(strsplit(temp[[i]],"\\|"))[1]
         Y<-unlist(strsplit(temp[[i]],"\\|"))[2]
+        if(length(which(var.names==X))==0)
+          stop(cat("variable ",X,"does not exist in the data"))
+        if(length(which(var.names==Y))==0)
+          stop(cat("variable ",Y,"does not exist in the data"))
         for(irow in 1:dim(cgraph)[1]){
           for(icol in 1:dim(cgraph)[2]){
             cgraph[which(var.names==X),which(var.names==Y)]<-0
@@ -2604,10 +2608,14 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
           break
         }
       }
-      #pattern ->
-      if(grepl(pattern="->",temp[[i]])){
+      #pattern -> (the code includes a negative lookbehind from chatgpt)
+      if(grepl(pattern="(?<!<)->",temp[[i]],perl=TRUE)){
         X<-unlist(strsplit(temp[[i]],"->"))[1]
         Y<-unlist(strsplit(temp[[i]],"->"))[2]
+        if(length(which(var.names==X))==0)
+          stop(cat("variable ",X,"does not exist in the data"))
+        if(length(which(var.names==Y))==0)
+          stop(cat("variable ",Y,"does not exist in the data"))
         for(irow in 1:dim(cgraph)[1]){
           for(icol in 1:dim(cgraph)[2]){
             cgraph[which(var.names==X),which(var.names==Y)]<-2
@@ -2621,6 +2629,10 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
       if(grepl(pattern="<->",temp[[i]])){
         X<-unlist(strsplit(temp[[i]],"<->"))[1]
         Y<-unlist(strsplit(temp[[i]],"<->"))[2]
+        if(length(which(var.names==X))==0)
+          stop(cat("variable ",X,"does not exist in the data"))
+        if(length(which(var.names==Y))==0)
+        stop(cat("variable ",Y,"does not exist in the data"))
         for(irow in 1:dim(cgraph)[1]){
           for(icol in 1:dim(cgraph)[2]){
             cgraph[which(var.names==X),which(var.names==Y)]<-2
@@ -2658,10 +2670,9 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
   cgraph <- matrix(1, nrow = nvars, ncol = nvars,dimnames=
                      list(reduced.var.names,reduced.var.names))
   diag(cgraph) <- rep(0, nvars)
-#fix the specified edges befor beginning.
+#fix the specified edges before beginning.
   cgraph<-fixed.edges(constrained.edges=constrained.edges,cgraph=cgraph)
 #Now, cgraph can have 1 (Xo-oY), 2 (X->Y) or 3 (X<->Y)
-
   #do.pairs returns a matrix with two rows.  Each column gives the column numbers
   #(in the reduced data set) of pairs variables that are joined by an edge in
   #cgraph.  Pairs without an edge are columns with zeros.
