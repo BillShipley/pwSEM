@@ -1561,7 +1561,8 @@ cor.structure.of.district<-function(MAG,vars.in.district){
       x<-MAG[colnames(MAG)==vars.in.district[i],
              colnames(MAG)==vars.in.district[j]]
       kount<-kount+1
-      if(x==0)cor.structure[kount]<-TRUE
+#if the value in MAG is 100 (free covariance) then not fixed
+      if(x<=1)cor.structure[kount]<-TRUE
       if(x>1)cor.structure[kount]<-FALSE
     }
   }
