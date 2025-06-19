@@ -26,9 +26,9 @@ null probability
 This performs a permutation version of the generalized covariance test
 (see: generalized.covariance), which tests for conditional independence
 of two random variables (Y1, Y2)
-conditional of a common set of conditioning variables {C}; see
+conditional of a common set of conditioning variables C; see
 Shah, R.D. & Peters, J. (2020).
-i.e. Y1 \emph{|} Y2 |{C}. R1 and R2 are the response residuals
+i.e. Y1 \emph{|} Y2 |C. R1 and R2 are the response residuals
 from pairs of any type of appropriate regressions of two dependent variables
 (Y1 and Y2) on a set of conditioning variables.
 

@@ -19,7 +19,7 @@ prob: asymptotic null probability of the T statistic.
 }
 \description{
 This function calculates the generalized covariance statistic of
-Shah, R.D. & Peters, J. (2020); i.e. Y1 \emph{|} Y2 |{C}, where C is a set of
+Shah, R.D. & Peters, J. (2020); i.e. Y1 \emph{|} Y2 |C, where C is a set of
 common conditioning variables. R1 and R2 are the response residuals
 from pairs of regressions of two dependent variables (Y1 and Y2) on
 a set of conditioning variables.
