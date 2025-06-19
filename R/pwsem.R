@@ -1089,7 +1089,7 @@ function(latents,conditioning.latents){
   return(1)
 }
 
-#' @export
+
 XYpairs.without.edge.in.pwSEM<-
 function(my.graph) {
   nvars<-dim(my.graph)[2]
