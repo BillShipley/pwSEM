@@ -362,7 +362,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
 
       hold.excluded.terms[i,1:n.to.add]<-exclude.terms
 #add the extra variables from the equivalent mag and redo fit
-      sem.functions[[i]]<-update.fun(sem.functions=sem.functions,
+      sem.functions[[i]]<-update.fun.pwSEM(sem.functions=sem.functions,
         i=i,all.grouping.vars=all.grouping.vars,add.terms=add.terms,
         data=dat)
 #Now, calculate dependent errors
@@ -414,7 +414,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
 #    dimnames(dat2)<-dimnames(dat)
     for(i in 1:ncol){
       standardized.sem.functions[[i]]<-
-        update.fun(sem.functions=sem.functions,i=i,all.grouping.vars =
+        update.fun.pwSEM(sem.functions=sem.functions,i=i,all.grouping.vars =
           all.grouping.vars,add.terms="none",data=dat2)
     }
   }
@@ -434,7 +434,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
 #' @param add.terms a vector
 #' @param data a data frame
 #' @export
-update.fun<-function(sem.functions,i,all.grouping.vars,add.terms,data){
+update.fun.pwSEM<-function(sem.functions,i,all.grouping.vars,add.terms,data){
   #This function updates a gamm4 or gam model by adding the terms in "add.terms"
   #to the model formula and returning the fitted model
   #if add.terms=NULL, it returns the same model fit
@@ -1090,7 +1090,7 @@ function(latents,conditioning.latents){
 }
 
 #' @export
-pairs.without.edge.in.pwSEM<-
+XYpairs.without.edge.in.pwSEM<-
 function(my.graph) {
   nvars<-dim(my.graph)[2]
   com <- utils::combn(1:nvars, 2)
@@ -1284,7 +1284,7 @@ DAG.to.MAG.in.pwSEM<-function (full.DAG, latents = NA,
 
   #Finished STEP 2 of Shipley & Douma.
   #Start STEP 3
-  pairs.to.test<-pairs.without.edge.in.pwSEM(observed.DAG)
+  pairs.to.test<-XYpairs.without.edge.in.pwSEM(observed.DAG)
   n.pairs.to.test<-dim(pairs.to.test)[2]
   n.remaining<-length(observed.vars)-2
   # if all observed variables share an edge then return...
@@ -1733,7 +1733,7 @@ cat("2. sort(info$var.name)=",sort(info$var.name)," sort(observed.vars))=",sort(
 
 #' Generalized covariance function
 #' @description This function calculates the generalized covariance statistic of
-#' Shah, R.D. & Peters, J. (2020); i.e. Y1 _|_ Y2 |{C}, where C is a set of
+#' Shah, R.D. & Peters, J. (2020); i.e. Y1 _|_ Y2 |C, where C is a set of
 #' common conditioning variables. R1 and R2 are the response residuals
 #' from pairs of regressions of two dependent variables (Y1 and Y2) on
 #'  a set of conditioning variables.
@@ -1782,9 +1782,9 @@ generalized.covariance<-function(R1,R2){
 #' This performs a permutation version of the generalized covariance test
 #' (see: generalized.covariance), which tests for conditional independence
 #' of two random variables (Y1, Y2)
-#' conditional of a common set of conditioning variables {C}; see
+#' conditional of a common set of conditioning variables C; see
 #' Shah, R.D. & Peters, J. (2020).
-#'  i.e. Y1 _|_ Y2 |{C}. R1 and R2 are the response residuals
+#'  i.e. Y1 _|_ Y2 |C. R1 and R2 are the response residuals
 #' from pairs of any type of appropriate regressions of two dependent variables
 #'  (Y1 and Y2) on a set of conditioning variables.
 #'

@@ -1,5 +1,5 @@
 Package: pwSEM
-Title: Piecewise structural equation modelling
+Title: Piecewise Structural Equation Modelling
 Version: 1.0.0
 Authors@R: 
     person("Bill", "Shipley", , "Bill.Shipley@USherbrooke.ca", role = c("aut", "cre"),
