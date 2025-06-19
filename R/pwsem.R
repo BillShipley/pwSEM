@@ -362,7 +362,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
 
       hold.excluded.terms[i,1:n.to.add]<-exclude.terms
 #add the extra variables from the equivalent mag and redo fit
-      sem.functions[[i]]<-update.fun.pwSEM(sem.functions=sem.functions,
+      sem.functions[[i]]<-pwSEM.update.fun(sem.functions=sem.functions,
         i=i,all.grouping.vars=all.grouping.vars,add.terms=add.terms,
         data=dat)
 #Now, calculate dependent errors
@@ -414,7 +414,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
 #    dimnames(dat2)<-dimnames(dat)
     for(i in 1:ncol){
       standardized.sem.functions[[i]]<-
-        update.fun.pwSEM(sem.functions=sem.functions,i=i,all.grouping.vars =
+        pwSEM.update.fun(sem.functions=sem.functions,i=i,all.grouping.vars =
           all.grouping.vars,add.terms="none",data=dat2)
     }
   }
@@ -434,7 +434,7 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
 #' @param add.terms a vector
 #' @param data a data frame
 #' @export
-update.fun.pwSEM<-function(sem.functions,i,all.grouping.vars,add.terms,data){
+pwSEM.update.fun<-function(sem.functions,i,all.grouping.vars,add.terms,data){
   #This function updates a gamm4 or gam model by adding the terms in "add.terms"
   #to the model formula and returning the fitted model
   #if add.terms=NULL, it returns the same model fit
