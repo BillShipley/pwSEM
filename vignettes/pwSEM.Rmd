@@ -232,6 +232,7 @@ equivalent.dag<-DAG.to.MAG.in.pwSEM(full.DAG=full.dag,
 drawGraph(equivalent.dag)
 
 ```
+
 The argument "latents" is a character vector giving the names of the latent variables in the DAG.  In this example: latents=c("L1","L2").  The argument "conditioning.latents" is a character vector giving the names of those latents, listed in the "latents" argument, that serve as conditioning variables for sampling (i.e. selection bias). In this example: conditioning.latents=c("L2").
 
 ## MAG.to.DAG.in.pwSEM
@@ -251,6 +252,7 @@ equivalent.dag<-MAG.to.DAG.in.pwSEM(MAG=mag,
 drawGraph(equivalent.dag)
 
 ```
+
 The first argument (MAG) is the MAG, usually created by the makeMG function (make Mixed Graph) of the ggm library.  The second argument (marginalized.latents) is a list containing each pair of variables having a double-headed arrow (X<->Y, i.e. a free dependency).  The third argument (conditioned.latents) is also a list containing each pair of variables having a line (X--Y, i.e. a free dependency causes by selection bias in sampling).
 
 ## generalized covariance function and its permutation version

@@ -992,6 +992,7 @@ add.conditioned.latents<-function(DAG,marginalized.latents,conditioned.latents){
 }
 
 #' Title MAG.to.DAG.in.pwSEM
+#'
 #' @description This function converts a MAG, usually created with the makeMG()
 #' function of th ggm library, with  0/1 for the directed paths,
 #' 100 for marginalized latents and 10 for conditioned latents.
