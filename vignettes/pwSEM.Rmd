@@ -214,26 +214,44 @@ The use of the mgcv and gamm4 packages, and the two model functions "gam" and "g
 
 2. If you have partial dependence between observations due to nesting or cross-classification, then you must use mixed models.  In general, one can allow for random variation in any free parameter in the fixed part of a mixed model.  However, the pwSEM package only allows for random variation in intercepts.  If you think that path coefficients (i.e. partial slopes) might randomly vary between higher level groups defined in the random part of the mixed model, then you must test and fit the model manually.
 
-##DAG.to.MAG.in.pwSEM
+## DAG.to.MAG.in.pwSEM
 
 Here is the call structure:
 
-DAG.to.MAG.in.pwSEM(full.DAG, latent,conditioning.latents)
+DAG.to.MAG.in.pwSEM(full.DAG,latent,conditioning.latents)
 
 This  is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  This function takes, as input, a DAG including marginalized and/or conditioned latents and outputs the d-separation equivalent DAG involving only the observed variables in the full DAG.
 Consider a DAG with five observed variables (X1 to X5) and two latent variables.  The first latent (L1) is the common causal parent of X2 and X4 and it is marginalized in the data.  The second latent (L2) is the common causal child of X4 and X5 and it is conditioned in the data (for example, only positive values of L2 are included in the data).  The  steps to create this full DAG:
 ```{r}
 library(ggm)
 full.dag<-DAG(X2~X1+L1,X3~X2,X4~X3+L1,L2~X4+X5)
+drawGraph(full.dag)
 equivalent.dag<-DAG.to.MAG.in.pwSEM(full.DAG=full.dag,
                 latents=c("L1","L2"),conditioning.latents=
                   c("L2"))
-drawGraph(full.dag)
 drawGraph(equivalent.dag)
+
 ```
 The argument "latents" is a character vector giving the names of the latent variables in the DAG.  In this example: latents=c("L1","L2").  The argument "conditioning.latents" is a character vector giving the names of those latents, listed in the "latents" argument, that serve as conditioning variables for sampling (i.e. selection bias). In this example: conditioning.latents=c("L2").
 
+## MAG.to.DAG.in.pwSEM
 
+Here is the call structure:
+
+MAG.to.DAG.in.pwSEM(MAG,marginalized.latents,conditioned.latents)
+
+This  is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  This function takes, as input, a MAG including marginalized and/or conditioned latents and outputs the equivalent DAG including the latent  variables.
+Consider a MAG with five observed variables (X1 to X4), with a free covariance (free dependency) between X2 and X4.  Here is how to convert this to a full DAG:
+```{r}
+library(ggm)
+mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
+drawGraph(mag)
+equivalent.dag<-MAG.to.DAG.in.pwSEM(MAG=mag,
+       marginalized.latents=list(X2~~X4),conditioned.latents= NULL)
+drawGraph(equivalent.dag)
+
+```
+The first argument (MAG) is the MAG, usually created by the makeMG function (make Mixed Graph) of the ggm library.  The second argument (marginalized.latents) is a list containing each pair of variables having a double-headed arrow (X<->Y, i.e. a free dependency).  The third argument (conditioned.latents) is also a list containing each pair of variables having a line (X--Y, i.e. a free dependency causes by selection bias in sampling).
 
 ## generalized covariance function and its permutation version
 
