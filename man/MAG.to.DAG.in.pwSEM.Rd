@@ -2,7 +2,7 @@
 % Please edit documentation in R/pwsem.R
 \name{MAG.to.DAG.in.pwSEM}
 \alias{MAG.to.DAG.in.pwSEM}
-\title{MAG.to.DAG.in.pwSEM}
+\title{Title MAG.to.DAG.in.pwSEM}
 \usage{
 MAG.to.DAG.in.pwSEM(MAG, marginalized.latents, conditioned.latents)
 }
