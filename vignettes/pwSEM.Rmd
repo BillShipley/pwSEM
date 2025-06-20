@@ -20,14 +20,17 @@ library(pwSEM)
 ```
 # Introduction
 
-This package is designed to accompany the third edition of Shipley, B.  *Cause and correlation in biology: A user's guide to path analysis, structural equations, and causal inference with R.*  Cambridge University Press, Cambridge.  This third edition should appear in 2025 or 2026.  More details and examples of the functions in this package are in that reference.  Note that the first two editions of this book did not make reference to this R package.
+This package is designed to accompany the third edition of Shipley, B.  *Cause and correlation in biology: A user's guide to path analysis, structural equations, and causal inference with R.*  Cambridge University Press, Cambridge.  This third edition should appear in 2025 or 2026.  More detail concerning this package and its functions, as well as examples of the functions in this package are in that reference.  Note that the first two editions of this book did not make reference to this R package.
 
-The pwSEM package contains functions for conducting piecewise structural equation modelling (SEM).  There are six main functions that users will typically use.  Each of them are described in this vignette.
-Only pwSEM() is required unless you want to conduct each of the steps in the dsep test yourself and then separately estimate the free parameters of the structural equations.
+The pwSEM package contains functions for conducting piecewise structural equation modelling (SEM).  There are eight  functions.  Each of them are described in this vignette.
 
 **pwSEM()** is the main program that is used to test piecewise structural equations (thus,the name pwSEM).
 
 **generalized.covariance()** and perm.generalized.covariance() perform the generalized covariance test (for large sample sizes) or its permutation version (for small sample sizes).
+
+**Dag.to.MAG.in.pwSEM** is a function that converts a DAG involving latent variables (marginalized or conditioned), into a d-separation (or m-separation) equivalent DAG.
+
+**MAG.to.DAG.in.pwSEM** is a function that converts a MAG into an equivalent DAG with latents.  A MAG is a mixed acyclic causal graph that can include double-headed arrows (X<->Y), representing an implicit common latent cause of both X and Y, or a line (X--Y) representing an implicit common latent child of X and Y. 
 
 **view.paths()** is a function allowing you to visually see how indirect effects along different paths vary given their original units when some structural equations are nonlinear and estimated using regression smoothers or are estimated using generalized linear (mixed) models with non-gaussian distributions.  You don't need this function if you are fitting linear structural equation models with gaussian distributions.
 
@@ -50,7 +53,7 @@ Only pwSEM() is required unless you want to conduct each of the steps in the dse
 
 6. The AIC statistic is calculated using the structural equations specified in the equivalent MAG if the equivalent MAG differs from your original causal model.  The AIC statistic is given in Shipley, B. & Douma, J.(2020). Generalized AIC and chi-squared statistics for path models consistent with directed acyclic graphs.  Ecology 101:e02960.  If there are correlated errors in your model, then the likelihood of the correlated errors is based on a normal copula function.
 
-7.  Mixed models involving beta-distributed variables in the structural equations are not currently supported
+7.  Mixed models involving beta-distributed variables in the structural equations are not currently supported.
 
 8.  Mixed models only allow for random terms involving intercepts.  You cannot have randomly varying slopes between groups.  If you think that slopes (path coefficients) will vary substantially between groups then you will have to perform the dsep tests yourself, outside of pwSEM(), and then fit the structural equations outside of pwSEM().
 
@@ -210,6 +213,26 @@ The use of the mgcv and gamm4 packages, and the two model functions "gam" and "g
 1. You can somewhat control the degree of nonlinearity ("wigglyness") of smoother splines via s(X, k=) or other types of smoother splines, but pwSEM cannot accommodate this; instead, it uses the default choice of cross-validation.  If your SEMs are sufficiently complicated to require you to explicitly control the degree of nonlinearity, then it is best to do this by conducting the dsep test and fitting the structural equations manually rather than via pwSEM.  Certainly, more complicated modelling of generalized linear and generalized additive models, with or without a random component (i.e. mixed models) requires that you have a good knowledge of this field!
 
 2. If you have partial dependence between observations due to nesting or cross-classification, then you must use mixed models.  In general, one can allow for random variation in any free parameter in the fixed part of a mixed model.  However, the pwSEM package only allows for random variation in intercepts.  If you think that path coefficients (i.e. partial slopes) might randomly vary between higher level groups defined in the random part of the mixed model, then you must test and fit the model manually.
+
+##DAG.to.MAG.in.pwSEM
+
+Here is the call structure:
+
+DAG.to.MAG.in.pwSEM(full.DAG, latent,conditioning.latents)
+
+This  is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  This function takes, as input, a DAG including marginalized and/or conditioned latents and outputs the d-separation equivalent DAG involving only the observed variables in the full DAG.
+Consider a DAG with five observed variables (X1 to X5) and two latent variables.  The first latent (L1) is the common causal parent of X2 and X4 and it is marginalized in the data.  The second latent (L2) is the common causal child of X4 and X5 and it is conditioned in the data (for example, only positive values of L2 are included in the data).  The  steps to create this full DAG:
+```{r}
+library(ggm)
+full.dag<-DAG(X2~X1+L1,X3~X2,X4~X3+L1,L2~X4+X5)
+equivalent.dag<-DAG.to.MAG.in.pwSEM(full.DAG=full.dag,
+                latents=c("L1","L2"),conditioning.latents=
+                  c("L2"))
+drawGraph(full.dag)
+drawGraph(equivalent.dag)
+```
+The argument "latents" is a character vector giving the names of the latent variables in the DAG.  In this example: latents=c("L1","L2").  The argument "conditioning.latents" is a character vector giving the names of those latents, listed in the "latents" argument, that serve as conditioning variables for sampling (i.e. selection bias). In this example: conditioning.latents=c("L2").
+
 
 
 ## generalized covariance function and its permutation version
