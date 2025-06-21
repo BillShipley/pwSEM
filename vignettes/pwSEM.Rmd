@@ -391,7 +391,7 @@ The resulting partially oriented dependency graph defines a set of equivalent ca
 
 If you wanted to forbid edges between XF and XM (XF|XM) and also force XH to directly cause XR, you would do this:
 
-```{r, eval=FALSE}
+```{r}
 nesting.structure<-list(XR=c("year","nest"),XM=c("year","nest"),
              XH=c("year","nest"),XP=c("year","nest"),
              XF=c("year","nest"))
@@ -440,7 +440,7 @@ CI.algorithm(sim_tetrads)
 ```
 Since this graph is saturated, we then test the three possible tetrad equations, given four variables:
 
-```{r, eval=FALSE}
+```{r}
 vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 ```
 
