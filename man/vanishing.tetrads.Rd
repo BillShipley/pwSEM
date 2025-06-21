@@ -33,12 +33,10 @@ tetrad equation is zero, then this is evidence for a latent variable.
 \examples{
 #Determines which of the three tetrad equations are zero in this data set
 #having 500 observations and 4 variables.  Since this set of 4 variables
-#has a saturated partially oriented dependency graph, the tetrad equations
+#has a saturated partially oriented dependency graph,
+#as shown using the CI.algorithm function, the tetrad equations
 #that are zero (i.e. vanish) identify where latent variables occur that
 #are common causes of these variables
-#Check if these 4 variables form a saturated partially oriented dependency
-#graph:
-CI.algorithm(sim_tetrads)
 #Since this is a saturated partially oriented dependency graph:
 vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 }

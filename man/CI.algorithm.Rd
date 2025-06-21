@@ -59,16 +59,12 @@ This function impliments the exploratory method of causal
 discovery called the CI (Causal Inference) algorithm of Pearl.
 }
 \examples{
-#Remove column 3 because it is not to be included in the partially
-#oriented dependency graph and it is not one of the nesting variables
-#(year, nest)
-fix.these.edges<-"
-XF|XR
-XP->XM
-"
-CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
- nesting=list(XF=c("year","nest"),XP=c("year","nest"),
-            XM=c("year","nest"),XH=c("year","nest"),
-            XR=c("year","nest")),constrained.edges=fix.these.edges,
-            smooth=FALSE,alpha.reject=0.05)
+set.seed(11)
+X1<-rnorm(500)
+X2<-0.5*X1+rnorm(500,0,sqrt(1-0.5^2))
+X3<-0.5*X2+rnorm(500,0,sqrt(1-0.5^2))
+X4<-0.5*X2+rnorm(500,0,sqrt(1-0.5^2))
+X5<-0.5*X3+0.5*X4+rnorm(500,0,sqrt(1-2*0.5^2))
+my.dat<-data.frame(X1,X2,X3,X4,X5)
+CI.algorithm(dat=my.dat,smooth=FALSE,alpha.reject=0.05)
 }

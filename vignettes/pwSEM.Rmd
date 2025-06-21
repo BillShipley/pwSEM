@@ -116,7 +116,7 @@ Here are the three steps, using the "sim_normal.no.nesting" data set that is inc
 
 STEP 1: Create a list containing the structural equations
 
-```{r}
+```{r, eval=FALSE}
 my.list<-list(mgcv::gam(X1~1,data=sim_normal.no.nesting,family=gaussian),
          mgcv::gam(X2~X1,data=sim_normal.no.nesting,family=gaussian),
          mgcv::gam(X3~X2,data=sim_normal.no.nesting,family=gaussian),
@@ -128,7 +128,7 @@ Notice that the first model in the list is for X1, which is an exogenous variabl
 
 STEP 2: call the pwSEM function
 
-```{r}
+```{r,eval=FALSE}
 out<-pwSEM(sem.functions=my.list,
     marginalized.latents=list(X4~~X2), data=sim_normal.no.nesting,use.permutations = TRUE,n.perms=5000,do.smooth=FALSE,all.grouping.vars = NULL)
 ```
@@ -149,7 +149,7 @@ The next argument takes a logical value (TRUE/FALSE) specifying if you want to u
 
 STEP 3: call the summary
 
-```{r}
+```{r, eval=FALSE}
 summary(out,structural.equations=TRUE)
 ```
 
@@ -161,7 +161,7 @@ Finally, if there are dependent errors, then the covariances and Pearson correla
 ### Example 2: dependent endogenous errors  from marginalized latents, Poisson distributed variables and no nesting structure in the data
 
 The only difference with the first example is in changing the "family=" argument in the gam() function.  Everything else remains the same.
-```{r}
+```{r, eval=FALSE}
 my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
          mgcv::gam(X2~X1,data=sim_poisson.no.nesting,family=poisson),
          mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson),
@@ -220,7 +220,7 @@ Here is the call structure:
 
 DAG.to.MAG.in.pwSEM(full.DAG,latent,conditioning.latents)
 
-This  is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  This function takes, as input, a DAG including marginalized and/or conditioned latents and outputs the d-separation equivalent DAG involving only the observed variables in the full DAG.
+This function is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  It takes, as input, a DAG including marginalized and/or conditioned latents and outputs the d-separation equivalent DAG involving only the observed variables in the full DAG.
 Consider a DAG with five observed variables (X1 to X5) and two latent variables.  The first latent (L1) is the common causal parent of X2 and X4 and it is marginalized in the data.  The second latent (L2) is the common causal child of X4 and X5 and it is conditioned in the data (for example, only positive values of L2 are included in the data).  The  steps to create this full DAG:
 ```{r}
 library(ggm)
@@ -241,7 +241,7 @@ Here is the call structure:
 
 MAG.to.DAG.in.pwSEM(MAG,marginalized.latents,conditioned.latents)
 
-This  is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  This function takes, as input, a MAG including marginalized and/or conditioned latents and outputs the equivalent DAG including the latent  variables.
+This function is only needed if you must do an inferential test of a piecewise SEM in separate steps rather than using the pwSEM() function.  It takes, as input, a MAG including marginalized and/or conditioned latents and outputs the equivalent DAG including the latent  variables.
 Consider a MAG with five observed variables (X1 to X4), with a free covariance (free dependency) between X2 and X4.  Here is how to convert this to a full DAG:
 ```{r}
 library(ggm)
@@ -312,6 +312,9 @@ data: the data frame holding the empirical data
 *scale*: the scale to be used for the effect variable. The default is "response", which will plot results using the original scale of the effect variable.  If scale="link" is used, then the scale is from the link function of a generalized linear model.
 
 You would normally call this function after testing, and fitting, your structural equations model using pwSEM().  Here is an example to graph the indirect effect of X1 on X4.  The graph shows the entire range of the cause if the minimum.x and maximum.x arguments are ommitted; otherwise these arguments specify the minimum and maximum values that you want to see. 
+
+To see each of the effects of X1 on X4, we use view.paths() while imputing the list of SEM functions, which are in the "sem.functions" object of "out", and the DAG, which is in the  "causal.graph" object of "out".
+
 ```{r}
 # DAG: X1->X2->X3->X4 and X2<->X4
 my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
@@ -319,10 +322,7 @@ my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
           mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson),
           mgcv::gam(X4~X3,data=sim_poisson.no.nesting,family=poisson))
  out<-pwSEM(sem.functions=my.list,marginalized.latents=list(X4~~X2),
-           data=sim_poisson.no.nesting,use.permutations = TRUE,n.perms=10000)
-# To see each of the effects of X1 on X4, we use view.paths() while imputing  # the list of SEM functions, which are in out$sem.functions, and the DAG, 
-# which is in out$causal.graph, that are output from the pwSEM function.
-
+           data=sim_poisson.no.nesting,use.permutations = FALSE)
 view.paths(from="X1",to="X4",sem.functions=out$sem.functions,data=
 sim_poisson.no.nesting,scale="response",dag=out$causal.graph)
 ```
@@ -378,7 +378,7 @@ CI.algorithm(dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05, constrai
 
 Here is an example, using the nested_data data set, which includes a nesting structure and a binomial distribution for the XR variable.  The first line creates a named list in which  two variables in the data frame (year, nest) define the nesting structure of each variable (XR, XM, XH, XP, XF) in the partially oriented dependency graph.  The second line calls the CI.algorithm() function.  Note that column 3 is excluded because it is not to be included in the partially oriented dependency graph.  Variable XR is defined as a non-normally distributed (binomial) variable and XP is defined as a Poisson distributed variable.  Only variables that are not normally (gaussian) distributed must be explicitly declared in the family= argument. The partially oriented dependency graph is obtained for the case in which every test of (conditional) dependency whose null probability is less than 0.3 is assumed to be dependent and nonlinear smoother functions are used.
 
-```{r}
+```{r, eval=FALSE}
 nesting.structure<-list(XR=c("year","nest"),XM=c("year","nest"),
              XH=c("year","nest"),XP=c("year","nest"),
              XF=c("year","nest"))
@@ -391,7 +391,7 @@ The resulting partially oriented dependency graph defines a set of equivalent ca
 
 If you wanted to forbid edges between XF and XM (XF|XM) and also force XH to directly cause XR, you would do this:
 
-```{r}
+```{r, eval=FALSE}
 nesting.structure<-list(XR=c("year","nest"),XM=c("year","nest"),
              XH=c("year","nest"),XP=c("year","nest"),
              XF=c("year","nest"))
@@ -435,11 +435,12 @@ multivariate normality and are not asymptotic, but a minimum sample size of
 
 Here is an example using simulated data given the DAG L->Z1, L->X2, L->X3 and L->X4.  In other words, there is a latent variable (L) that is a common cause of X1, X2 and X3, but not of X4.  First, determine if the partially oriented dependency graph is saturated, using the CI.algorithm() function.  A saturated graph is one in which every variable is joined by a line to every other variable.
 
-```{r}
+```{r, eval=FALSE}
 CI.algorithm(sim_tetrads)
 ```
 Since this graph is saturated, we then test the three possible tetrad equations, given four variables:
-```{r}
+
+```{r, eval=FALSE}
 vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 ```
 

@@ -62,36 +62,6 @@ pwSEM.class<-function(x){
 #' dsep.probs, sem.functions,C.statistic, prob.C.statistic,
 #' AIC, n.data.lines, use.permutations, n.perms
 #' @examples
-#' # Example with correlated endogenous errors, normally distributed variables
-#' # and no nesting structure in the data
-#' # "sim_normal.no.nesting" is included with this package
-#' # DAG: X1->X2->X3->X4 and X2<->X4
-#' # CREATE A LIST HOLDING THE STRUCTURAL EQUATIONS USING gam()
-#' library(mgcv)
-#' my.list<-list(mgcv::gam(X1~1,data=sim_normal.no.nesting,family=gaussian),
-#'          mgcv::gam(X2~X1,data=sim_normal.no.nesting,family=gaussian),
-#'          mgcv::gam(X3~X2,data=sim_normal.no.nesting,family=gaussian),
-#'          mgcv::gam(X4~X3,data=sim_normal.no.nesting,family=gaussian))
-#' # RUN THE pwSEM FUNCTION WITH PERMUTATION PROBABILITIES AND INCLUDING THE DEPENDENT ERRORS
-#' out<-pwSEM(sem.functions=my.list, marginalized.latents=list(X4~~X2),
-#'           data=sim_normal.no.nesting,use.permutations = TRUE)
-#' summary(out,structural.equations=TRUE)
-#'
-#' # Example with correlated endogenous errors, Poisson distributed variables
-#' # and no nesting structure in the data
-#' # "sim_poisson.no.nesting" is included with package
-#' # DAG: X1->X2->X3->X4 and X2<->X4
-#' # CREATE A LIST HOLDING THE STRUCTURAL EQUATIONS USING gam()
-#' library(mgcv)
-#' my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
-#'          mgcv::gam(X2~X1,data=sim_poisson.no.nesting,family=poisson),
-#'          mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson),
-#'          mgcv::gam(X4~X3,data=sim_poisson.no.nesting,family=poisson))
-#' # RUN THE pwSEM FUNCTION WITH PERMUTATION PROBABILITIES WITH 10000
-#' # PERMUTATIONS AND INCLUDING THE DEPENDENT ERRORS
-#' out<-pwSEM(sem.functions=my.list,marginalized.latents=list(X4~~X2),
-#'           data=sim_poisson.no.nesting,use.permutations = TRUE,n.perms=10000)
-#' summary(out,structural.equations=TRUE)
 #'
 #' # Simulated data with correlated errors involving endogenous
 #' # variables, normally-distributed data and with a 2-level grouping
@@ -108,21 +78,6 @@ pwSEM.class<-function(x){
 #'           data=sim_normal.with.nesting,use.permutations = TRUE,
 #'           do.smooth=TRUE,all.grouping.vars=c("group"))
 #' summary(out,structural.equations=TRUE)
-
-#' # Empirical example with normal and binomial data,a 3-level nesting structure
-#'# using "nested_data" (included with this package)
-#' # CREATE A LIST HOLDING THE STRUCTURAL EQUATIONS USING gamm4()
-#' # RUN THE pwSEM FUNCTION WITHOUT PERMUTATION PROBABILITIES AND INCLUDING THE DEPENDENT ERRORS
-#' library(gamm4)
-#' my.list<-list(gamm4::gamm4(XF~1,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-#'    gamm4::gamm4(XP~1,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-#'    gamm4::gamm4(XM~XP+XF+XH,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-#'    gamm4::gamm4(XH~XP+XF,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-#'    gamm4::gamm4(XR~XM+XH,family="binomial",random=~(1|nest)+(1|year),data=nested_data))
-
-#' summary(pwSEM(sem.functions=my.list,data=nested_data,
-#'       use.permutations=FALSE,do.smooth=FALSE,marginalized.latents=list(XP~~XF),
-#'       all.grouping.vars=c("nest","year")))
 #'
 #'# see vignette("pwSEM")
 #'
@@ -2516,18 +2471,14 @@ declare.family<-function(dat,family=NA,nesting){
 #' @returns Just the partially-oriented graph output to the screen or
 #' just the adjacency matrix
 #' @examples
-#' #Remove column 3 because it is not to be included in the partially
-#' #oriented dependency graph and it is not one of the nesting variables
-#' #(year, nest)
-#' fix.these.edges<-"
-#' XF|XR
-#' XP->XM
-#' "
-#' CI.algorithm(dat=nested_data[,-3],family=data.frame(XR="binomial"),
-#'  nesting=list(XF=c("year","nest"),XP=c("year","nest"),
-#'             XM=c("year","nest"),XH=c("year","nest"),
-#'             XR=c("year","nest")),constrained.edges=fix.these.edges,
-#'             smooth=FALSE,alpha.reject=0.05)
+#' set.seed(11)
+#' X1<-rnorm(500)
+#' X2<-0.5*X1+rnorm(500,0,sqrt(1-0.5^2))
+#' X3<-0.5*X2+rnorm(500,0,sqrt(1-0.5^2))
+#' X4<-0.5*X2+rnorm(500,0,sqrt(1-0.5^2))
+#' X5<-0.5*X3+0.5*X4+rnorm(500,0,sqrt(1-2*0.5^2))
+#' my.dat<-data.frame(X1,X2,X3,X4,X5)
+#' CI.algorithm(dat=my.dat,smooth=FALSE,alpha.reject=0.05)
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
                         constrained.edges=NA,write.result = T)
@@ -2956,12 +2907,10 @@ CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.0
 #' @examples
 #' #Determines which of the three tetrad equations are zero in this data set
 #' #having 500 observations and 4 variables.  Since this set of 4 variables
-#' #has a saturated partially oriented dependency graph, the tetrad equations
+#' #has a saturated partially oriented dependency graph,
+#' #as shown using the CI.algorithm function, the tetrad equations
 #' #that are zero (i.e. vanish) identify where latent variables occur that
 #' #are common causes of these variables
-#' #Check if these 4 variables form a saturated partially oriented dependency
-#' #graph:
-#' CI.algorithm(sim_tetrads)
 #' #Since this is a saturated partially oriented dependency graph:
 #' vanishing.tetrads(dat=sim_tetrads,sig=0.05)
 #' @export

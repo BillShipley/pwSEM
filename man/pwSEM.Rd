@@ -59,36 +59,6 @@ model linear, generalized linear, generalized linear mixed, additive, generalize
 generalized additive mixed models.
 }
 \examples{
-# Example with correlated endogenous errors, normally distributed variables
-# and no nesting structure in the data
-# "sim_normal.no.nesting" is included with this package
-# DAG: X1->X2->X3->X4 and X2<->X4
-# CREATE A LIST HOLDING THE STRUCTURAL EQUATIONS USING gam()
-library(mgcv)
-my.list<-list(mgcv::gam(X1~1,data=sim_normal.no.nesting,family=gaussian),
-         mgcv::gam(X2~X1,data=sim_normal.no.nesting,family=gaussian),
-         mgcv::gam(X3~X2,data=sim_normal.no.nesting,family=gaussian),
-         mgcv::gam(X4~X3,data=sim_normal.no.nesting,family=gaussian))
-# RUN THE pwSEM FUNCTION WITH PERMUTATION PROBABILITIES AND INCLUDING THE DEPENDENT ERRORS
-out<-pwSEM(sem.functions=my.list, marginalized.latents=list(X4~~X2),
-          data=sim_normal.no.nesting,use.permutations = TRUE)
-summary(out,structural.equations=TRUE)
-
-# Example with correlated endogenous errors, Poisson distributed variables
-# and no nesting structure in the data
-# "sim_poisson.no.nesting" is included with package
-# DAG: X1->X2->X3->X4 and X2<->X4
-# CREATE A LIST HOLDING THE STRUCTURAL EQUATIONS USING gam()
-library(mgcv)
-my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
-         mgcv::gam(X2~X1,data=sim_poisson.no.nesting,family=poisson),
-         mgcv::gam(X3~X2,data=sim_poisson.no.nesting,family=poisson),
-         mgcv::gam(X4~X3,data=sim_poisson.no.nesting,family=poisson))
-# RUN THE pwSEM FUNCTION WITH PERMUTATION PROBABILITIES WITH 10000
-# PERMUTATIONS AND INCLUDING THE DEPENDENT ERRORS
-out<-pwSEM(sem.functions=my.list,marginalized.latents=list(X4~~X2),
-          data=sim_poisson.no.nesting,use.permutations = TRUE,n.perms=10000)
-summary(out,structural.equations=TRUE)
 
 # Simulated data with correlated errors involving endogenous
 # variables, normally-distributed data and with a 2-level grouping
@@ -105,19 +75,6 @@ out<-pwSEM(sem.functions=my.list,marginalized.latents=list(X4~~X2),
           data=sim_normal.with.nesting,use.permutations = TRUE,
           do.smooth=TRUE,all.grouping.vars=c("group"))
 summary(out,structural.equations=TRUE)
-# Empirical example with normal and binomial data,a 3-level nesting structure
-# using "nested_data" (included with this package)
-# CREATE A LIST HOLDING THE STRUCTURAL EQUATIONS USING gamm4()
-# RUN THE pwSEM FUNCTION WITHOUT PERMUTATION PROBABILITIES AND INCLUDING THE DEPENDENT ERRORS
-library(gamm4)
-my.list<-list(gamm4::gamm4(XF~1,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-   gamm4::gamm4(XP~1,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-   gamm4::gamm4(XM~XP+XF+XH,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-   gamm4::gamm4(XH~XP+XF,random=~(1|nest)+(1|year),family="gaussian",data=nested_data),
-   gamm4::gamm4(XR~XM+XH,family="binomial",random=~(1|nest)+(1|year),data=nested_data))
-summary(pwSEM(sem.functions=my.list,data=nested_data,
-      use.permutations=FALSE,do.smooth=FALSE,marginalized.latents=list(XP~~XF),
-      all.grouping.vars=c("nest","year")))
 
 # see vignette("pwSEM")
 
