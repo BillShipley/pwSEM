@@ -382,13 +382,6 @@ get.unbiased.sems<-function(sem.functions,mag,equivalent.mag,
     residual.values)
 }
 
-#' updates a gamm4 or gam model by adding the terms in "add.terms"
-#' @param sem.functions a list
-#' @param i a single value indexing the function in sem.functions
-#' @param all.grouping.vars a vector
-#' @param add.terms a vector
-#' @param data a data frame
-#' @export
 pwSEM.update.fun<-function(sem.functions,i,all.grouping.vars,add.terms,data){
   #This function updates a gamm4 or gam model by adding the terms in "add.terms"
   #to the model formula and returning the fitted model
@@ -636,6 +629,7 @@ test.dsep.claims<-function(my.list,my.basis.set,data,use.permutations=FALSE,
 #' @param ... other arguments
 #' @return A summary of the pwSEM object.
 #' @method summary pwSEM.class
+#' @returns Returns a summary of the pwSEM object that is written to the screen
 #' @export
 summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
   #object is an object produced by pwSEM()
@@ -958,8 +952,8 @@ add.conditioned.latents<-function(DAG,marginalized.latents,conditioned.latents){
 #' @param conditioned.latents a list containing pairs of variables that cause
 #' a common latent conditioned cause; eg list(X2~~X3, X4~~X5)
 #'
-#' @return A binary matrix of 0/1 values representing the DAG produced
-#' by adding the latent variables (shown as L1, L2 etc)
+#' @returns A binary matrix of 0/1 values representing the DAG produced
+#' by adding the latent variables (named as L1, L2 etc)
 #'
 #' @export
 #'
@@ -1167,7 +1161,7 @@ function(use.dag,start.var,end.var){
 #' of those latents, listed in the "latents" argument, that serve as
 #' conditioning variables for sampling (i.e. selection bias).
 #'
-#' @return A matrix holding the MAG
+#' @returns A binary (0/1) matrix holding the MAG
 #' @export
 #'
 #' @examples
@@ -1445,8 +1439,7 @@ prob.distribution.for.copula<-function(fun,data){
 #' the DAG or the makeGM function in the gmm library
 #' @param data A data frame holding the observed data used in the calls to
 #' the models in the sem.model object
-#'
-#' @return A data frame containing the log-likelihood of the full SEM (LL),
+#' @returns A data frame containing the log-likelihood of the full SEM (LL),
 #' the number of free parameters that were estimated (K), along with the
 #' AIC and the bias-corrected AIC (AICc)
 #' @export
@@ -1635,9 +1628,6 @@ get.residuals<-function(my.list,dsep,data,do.smooth,
 
   n.vars<-length(info$var.name)
   if(n.vars!=length(observed.vars)){
-    print("info")
-    print(info)
-cat("1. sort(observed.vars) passed to function=",sort(observed.vars),"\n")
     stop("You have not modelled all variables in the DAG/MAG.
          You must also explicitly model all exogenous variables")
   }
@@ -1701,11 +1691,8 @@ cat("2. sort(info$var.name)=",sort(info$var.name)," sort(observed.vars))=",sort(
 #' @param R1 a numerical vector of residuals
 #' @param R2 a second numerical vector of residuals
 #'
-#' @return
-#' T.stat: the test statistic, which is asymptotically distributed
-#' as a standard normal variate;
-#'
-#' prob: asymptotic null probability of the T statistic.
+#' @returns A list containing T.stat (the test statistic) and prob
+#' (asymptotic null probability of the T statistic).
 #'
 #' @export
 #'
@@ -1751,12 +1738,9 @@ generalized.covariance<-function(R1,R2){
 #' @param R2 a numerical vector (typically residuals of the second regression)
 #' @param nperm the number of permutations (defaults to 5000)
 #'
-#' @return
-#' T.stat: The T statistic
-#'
+#' @returns  A list containing the T statistic (T.stat),
 #' permutation.prob: the estimated null probability of independence of R1
-#' and R2, based on the chosen number of permutations
-#'
+#' and R2, based on the chosen number of permutations,
 #' lower.95.CI and upper.95.CI: the 95% confidence intervals of the estimated
 #' null probability
 #' @export
@@ -1985,7 +1969,7 @@ extract.variable.info.from.gam<-function(fo){
 #' estimate of the 1st derivative of the function for from-->to)
 #' @param dag The directed acyclic graph (DAG) used; usually this is the causal.graph
 #' object returned from a call to pwSEM
-#' @return Graphs are produced for each directed path from-->to and (return.values=TRUE)
+#' @returns Graphs are produced for each directed path from-->to and (return.values=TRUE)
 #' a data frame containing the values of the "from" variable and approxiate values of
 #' the 1st derivative of the function linking from-->to (i.e.the path coefficient)
 #' if the relationship is linear.
@@ -2173,12 +2157,10 @@ view.paths<-function(from,to,sem.functions,data,minimum.x=NULL,
 #' @param n.sim the number of independent simulation runs
 #' @param plot.result a graphical output of the result
 #'
-#' @return MCprobability (Monte carlo null probability),
-#' MLprobability (maximum likelihood probability)
-#'
+#' @returns A list containing MCprobability (Monte carlo null probability),
+#' and MLprobability (maximum likelihood probability)
 #' @importFrom graphics hist legend lines
 #' @importFrom stats rnorm var dchisq pchisq cor
-#'
 #' @export
 #'
 #' @examples
@@ -2469,7 +2451,7 @@ declare.family<-function(dat,family=NA,nesting){
 #' (write.result = T) or just the adjacency matrix returned as output.  The
 #' default value is write.result = T.
 #' @returns Just the partially-oriented graph output to the screen or
-#' just the adjacency matrix
+#' just the adjacency matrix as a binary (0/1) matrix
 #' @examples
 #' set.seed(11)
 #' X1<-rnorm(500)

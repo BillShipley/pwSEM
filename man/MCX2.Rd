@@ -18,8 +18,8 @@ MCX2(model.df, n.obs, model.chi.square, n.sim = 10000, plot.result = FALSE)
 \item{plot.result}{a graphical output of the result}
 }
 \value{
-MCprobability (Monte carlo null probability),
-MLprobability (maximum likelihood probability)
+A list containing MCprobability (Monte carlo null probability),
+and MLprobability (maximum likelihood probability)
 }
 \description{
 The maximum likelihood chi-square statistic that

@@ -15,6 +15,8 @@
 }
 \value{
 A summary of the pwSEM object.
+
+Returns a summary of the pwSEM object that is written to the screen
 }
 \description{
 Provides a summary for objects of class \code{pwSEM}.

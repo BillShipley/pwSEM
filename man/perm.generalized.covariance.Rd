@@ -14,11 +14,9 @@ perm.generalized.covariance(R1, R2, nperm = 5000)
 \item{nperm}{the number of permutations (defaults to 5000)}
 }
 \value{
-T.stat: The T statistic
-
+A list containing the T statistic (T.stat),
 permutation.prob: the estimated null probability of independence of R1
-and R2, based on the chosen number of permutations
-
+and R2, based on the chosen number of permutations,
 lower.95.CI and upper.95.CI: the 95\% confidence intervals of the estimated
 null probability
 }

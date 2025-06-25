@@ -17,7 +17,7 @@ a common latent conditioned cause; eg list(X2~~X3, X4~~X5)}
 }
 \value{
 A binary matrix of 0/1 values representing the DAG produced
-by adding the latent variables (shown as L1, L2 etc)
+by adding the latent variables (named as L1, L2 etc)
 }
 \description{
 This function converts a MAG, usually created with the makeMG()

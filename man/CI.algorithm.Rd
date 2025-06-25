@@ -52,7 +52,7 @@ default value is write.result = T.}
 }
 \value{
 Just the partially-oriented graph output to the screen or
-just the adjacency matrix
+just the adjacency matrix as a binary (0/1) matrix
 }
 \description{
 This function impliments the exploratory method of causal

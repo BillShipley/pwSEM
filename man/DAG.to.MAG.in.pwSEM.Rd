@@ -18,7 +18,7 @@ of those latents, listed in the "latents" argument, that serve as
 conditioning variables for sampling (i.e. selection bias).}
 }
 \value{
-A matrix holding the MAG
+A binary (0/1) matrix holding the MAG
 }
 \description{
 Title DAG.to.MAG.in.pwSEM
