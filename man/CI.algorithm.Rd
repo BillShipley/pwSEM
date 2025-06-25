@@ -11,7 +11,7 @@ CI.algorithm(
   smooth = TRUE,
   alpha.reject = 0.05,
   constrained.edges = NA,
-  write.result = T
+  write.result = TRUE
 )
 }
 \arguments{
