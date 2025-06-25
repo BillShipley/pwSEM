@@ -2023,6 +2023,8 @@ view.paths<-function(from,to,sem.functions,data,minimum.x=NULL,
       if(dag[i,j]==100)dag[i,j]<-0
     }
   }
+  oldpar <- par(no.readonly = TRUE)
+  on.exit(par(oldpar)) # to return par to previous
   ggm::drawGraph(dag)
   cat("Press Enter to continue...")
   readline(prompt="")
