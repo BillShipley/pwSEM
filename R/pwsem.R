@@ -2481,7 +2481,7 @@ declare.family<-function(dat,family=NA,nesting){
 #' CI.algorithm(dat=my.dat,smooth=FALSE,alpha.reject=0.05)
 #' @export
 CI.algorithm<-function (dat, family=NA,nesting=NA,smooth=TRUE,alpha.reject = 0.05,
-                        constrained.edges=NA,write.result = T)
+                        constrained.edges=NA,write.result = TRUE)
   #
   #The same as the Causal.Inference function in CauseAndCorrelation, except
   #that the Pcor.prob function is changed to use the Generalized Covariance
