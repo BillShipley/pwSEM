@@ -639,7 +639,7 @@ test.dsep.claims<-function(my.list,my.basis.set,data,use.permutations=FALSE,
 #' @export
 summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
   #object is an object produced by pwSEM()
-  #structural.equations=T to output each structural equation
+  #structural.equations=TRUE to output each structural equation
   cat("Causal graph:","\n")
   var.names<-row.names(object$causal.graph)
   n.vars<-dim(object$causal.graph)[1]
@@ -655,39 +655,39 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
   for(i in 1:(n.vars-1)){
     for(j in (i+1):n.vars){
       if(object$causal.graph[i,j]==1)
-        cat(var.names[i]," ->",var.names[j],sep="",fill=T)
+        cat(var.names[i]," ->",var.names[j],sep="",fill=TRUE)
       if(object$causal.graph[j,i]==1)
-        cat(var.names[j]," ->",var.names[i],sep="",fill=T)
+        cat(var.names[j]," ->",var.names[i],sep="",fill=TRUE)
       if(object$causal.graph[i,j]==100)
-        cat(var.names[i],"<->",var.names[j],sep="",fill=T)
+        cat(var.names[i],"<->",var.names[j],sep="",fill=TRUE)
       if(object$causal.graph[i,j]==10)
-        cat(var.names[i],"---",var.names[j],sep="",fill=T)
+        cat(var.names[i],"---",var.names[j],sep="",fill=TRUE)
     }
   }
 #now print out isolated variables in causal.graph
   for(i in 1:n.vars){
     if(sum(object$causal.graph[,i])==0 &
        sum(object$causal.graph[i,])==0)
-      cat(var.names[i],"--- NONE",sep="",fill=T)
+      cat(var.names[i],"--- NONE",sep="",fill=TRUE)
   }
 
   if(any(object$causal.graph!=object$dsep.equivalent.causal.graph)){
-    cat("m-separation equivalent DAG or MAG",fill=T)
+    cat("m-separation equivalent DAG or MAG",fill=TRUE)
     for(i in 1:(n.vars-1)){
       for(j in (i+1):n.vars){
         if(object$dsep.equivalent.causal.graph[i,j]==1)
-          cat(var.names[i]," ->",var.names[j],sep="",fill=T)
+          cat(var.names[i]," ->",var.names[j],sep="",fill=TRUE)
         if(object$dsep.equivalent.causal.graph[j,i]==1)
-          cat(var.names[j]," ->",var.names[i],sep="",fill=T)
+          cat(var.names[j]," ->",var.names[i],sep="",fill=TRUE)
         if(object$dsep.equivalent.causal.graph[i,j]==100)
-          cat(var.names[i],"<->",var.names[j],sep="",fill=T)
+          cat(var.names[i],"<->",var.names[j],sep="",fill=TRUE)
       }
     }
     #now print out isolated variables in desp.equivalent.causal.graph
     for(i in 1:n.vars){
       if(sum(object$dsep.equivalent.causal.graph[,i])==0 &
          sum(object$dsep.equivalent.causal.graph[i,])==0)
-        cat(var.names[i],"--- NONE",sep="",fill=T)
+        cat(var.names[i],"--- NONE",sep="",fill=TRUE)
     }
   }
   n<-length(object$basis.set)
@@ -697,30 +697,30 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
   for(i in 1:n){
     cat("(",n2[i],") ",object$basis.set[[i]][1],"_||_",
         object$basis.set[[i]][2],"| {",object$basis.set[[i]][-c(1,2)],"}",
-        sep=" ",fill=T)
+        sep=" ",fill=TRUE)
   }
   cat("\n")
   if(object$use.permutations){
-    cat("Null probabilities are based on permutation method",fill=T)
-    cat("with",object$n.perms,"random permutations",fill=T)
-    cat("Number of observations in data set:",object$n.data.lines,fill=T,"\n")
+    cat("Null probabilities are based on permutation method",fill=TRUE)
+    cat("with",object$n.perms,"random permutations",fill=TRUE)
+    cat("Number of observations in data set:",object$n.data.lines,fill=TRUE,"\n")
   }
   if(!object$use.permutations & object$n.data.lines<100)
-    cat("Given small sample size, you should specify use.permutations=T",fill=T)
-  cat("Null probabilities of independence claims in basis set",fill=T)
+    cat("Given small sample size, you should specify use.permutations=TRUE",fill=TRUE)
+  cat("Null probabilities of independence claims in basis set",fill=TRUE)
   for(i in 1:n){
     cat("(",n2[i],") ",object$dsep.probs[i],
-        sep="",fill=T)
+        sep="",fill=TRUE)
   }
   if(!object$use.permutations){
-    cat("Number of observations in data set:",object$n.data.lines,fill=T,"\n")
+    cat("Number of observations in data set:",object$n.data.lines,fill=TRUE,"\n")
   }
   cat("\n")
   cat("C-statistic:",object$C.stat,", df =",2*n,
-      ", null probability:",object$prob.C.statistic,fill=T,"\n")
+      ", null probability:",object$prob.C.statistic,fill=TRUE,"\n")
   if(correlated.errors){
      cat("Brown correction to null probability for correlated tests:",
-      object$Brown.correction.p,fill=T,"\n")
+      object$Brown.correction.p,fill=TRUE,"\n")
     if(object$prob.C.statistic!=object$Brown.correction.p){
       cat("Correlations between the tests of independence","\n")
       rownames(object$R.correlated.tests)<-as.character(1:n)
@@ -731,21 +731,21 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
     }
   }
 
-  cat("AIC statistic:",object$AIC,fill=T,"\n")
-  cat("Bias-corrected AIC statistic:",object$AICc,fill=T,"\n")
-  cat("log-likelihood:",object$LL,fill=T,"\n")
-  cat("Number of free parameters:",object$free.parameters,fill=T,"\n")
+  cat("AIC statistic:",object$AIC,fill=TRUE,"\n")
+  cat("Bias-corrected AIC statistic:",object$AICc,fill=TRUE,"\n")
+  cat("log-likelihood:",object$LL,fill=TRUE,"\n")
+  cat("Number of free parameters:",object$free.parameters,fill=TRUE,"\n")
   #print out structural equations...
   if(structural.equations){
     n.funs<-length(object$sem.functions)
-    cat("_______Piecewise Structural Equations__________",fill=T)
+    cat("_______Piecewise Structural Equations__________",fill=TRUE)
     cat("\n")
 
     for(i in 1:n.funs){
   #if the SEM function is not mixed...
       if(inherits(object$sem.functions[[i]],"gam")){
         for.i<-as.character(object$sem.functions[[i]]$formula)
-        cat("Structural equation ",i,": ",for.i[2],for.i[1],for.i[3],fill=T)
+        cat("Structural equation ",i,": ",for.i[2],for.i[1],for.i[3],fill=TRUE)
         cat("\n")
         #if the function was modified to account for dependent errors...
         if(object$sem.modified[i]=="yes"){
@@ -756,12 +756,12 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
             !is.na(object$excluded.terms[i,])])
           cat("\n")
         }
-        cat("         Parametric coefficients:",fill=T)
+        cat("         Parametric coefficients:",fill=TRUE)
         print(summary(object$sem.functions[[i]])$p.table)
         are.smooths<-!is.null(summary(object$sem.functions[[i]])$s.table)
         if(are.smooths){
           cat("\n")
-          cat("         Smoother terms:","\n",fill=T)
+          cat("         Smoother terms:","\n",fill=TRUE)
           print(summary(object$sem.functions[[i]])$
             s.table)
         }
@@ -770,11 +770,11 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
           cat("\n")
           cat("Since all variables are modelled as normally distributed,","\n")
           cat("here is the standardized structural equation:","\n")
-          cat("         Parametric coefficients:",fill=T)
+          cat("         Parametric coefficients:",fill=TRUE)
           print(summary(object$standardized.sem[[i]])$p.table)
           if(are.smooths){
             cat("\n")
-            cat("         Smoother terms:","\n",fill=T)
+            cat("         Smoother terms:","\n",fill=TRUE)
             print(summary(object$standardized.sem[[i]])$
                   s.table)
           }
@@ -786,7 +786,7 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
       #if the function is mixed ...
       else{
         for.i<-as.character(object$sem.functions[[i]]$gam$formula)
-        cat("Structural equation ",i,": ",for.i[2],for.i[1],for.i[3],fill=T)
+        cat("Structural equation ",i,": ",for.i[2],for.i[1],for.i[3],fill=TRUE)
         cat("\n")
         #if the function was modified due to dependent errors...
         if(object$sem.modified[i]=="yes"){
@@ -797,12 +797,12 @@ summary.pwSEM.class<-function(object,structural.equations=FALSE,...){
            !is.na(object$excluded.terms[i,])])
           cat("\n")
         }
-        cat("         Parametric coefficients:",fill=T)
+        cat("         Parametric coefficients:",fill=TRUE)
         print(summary(object$sem.functions[[i]]$gam)$p.table)
         are.smooths<-!is.null(summary(object$sem.functions[[i]]$gam)$s.table)
         if(are.smooths){
           cat("\n")
-          cat("         Smoother terms:","\n",fill=T)
+          cat("         Smoother terms:","\n",fill=TRUE)
           print(summary(object$sem.functions[[i]]$gam)$s.table)
         }
         #The function is mixed so no standardized values...
