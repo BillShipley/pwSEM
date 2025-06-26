@@ -1,10 +1,10 @@
 Package: pwSEM
-Title: "Piecewise Structural Equation Modelling""
+Title: Piecewise Structural Equation Modelling
 Version: 1.0.0
 Authors@R: 
     person("Bill", "Shipley", , "Bill.Shipley@USherbrooke.ca", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-7026-3880"))
-Description: A package to conduct dsep tests of a directed, or mixed, acyclic graph 
+Description: Conduct dsep tests (piecewise SEM) of a directed, or mixed, acyclic graph 
     without latent variables (but possibly with implicitly marginalized or
     conditioned latent variables that create dependent errors) based on
     linear, generalized linear, or additive modelswith or without a
