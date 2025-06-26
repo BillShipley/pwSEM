@@ -341,6 +341,26 @@ drawGraph(mag)
 basiSet.MAG(cgraph=mag)
 ```
 
+## The get.AIC function
+
+The get.AIC() function outputs the log-likelihood (LL), the number of free parameters that were estimated (K), the AIC value and the bias-corrected AIC (AICc).  You must input (1) a list (sem.model) containing the structural equations, each created using either the gam() or the gamm() functions of the mgcv package, (2) the DAG or MAG (MAG) and (3) the data frame (data) containing the observed data used in the calls to the models in the sem.model object.
+```{r}
+mag<-makeMG(dg=DAG(X3~X1+X2,X4~X3),bg=UG(~X1*X2))
+drawGraph(mag)
+set.seed(11)
+L<-rnorm(200)
+X1<-0.5*L+rnorm(200,0,sqrt(1-0.5^2))
+X2<-0.5*L+rnorm(200,0,sqrt(1-0.5^2))
+X3<-0.5*X1+0.5*X2+rnorm(200,0,sqrt(1-2*0.5^2))
+X4<-0.5*X3+rnorm(200,0,sqrt(1-0.5^2))
+my.dat<-data.frame(X1,X2,X3,X4)
+my.list<-list(mgcv::gam(X1~1,data=my.dat,family=gaussian),
+        mgcv::gam(X2~1,data=my.dat,family=gaussian),
+        mgcv::gam(X3~X1+X2,data=my.dat,family=gaussian),
+        mgcv::gam(X4~X3,data=my.dat,family=gaussian))
+get.AIC(sem.model=my.list,MAG=mag,data=my.dat)
+```
+
 ## The MCX2 function
 
 The maximum likelihood chi-square statistic that is commonly calculated in covariance-based structural equations modelling only asymptotically follows a theoretical Chi-Squared distribution.  With small sample sizes it can deviate enough from the theoretical distribution to make it problematic. The MCX2() function (Monte Carlo X2) estimates the empirical probability distribution of the maximum likelihood chi-square statistic (output, for instance, from the lavaan package), given a fixed sample size and degrees of freedom (output, for instance, from the lavaan package), and outputs the estimated null probability given this sample size and degrees of freedom.  This is explained in more detail in the book.  Here is the MCX2() function:
