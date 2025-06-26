@@ -22,7 +22,7 @@ library(pwSEM)
 
 This package is designed to accompany the third edition of Shipley, B.  *Cause and correlation in biology: A user's guide to path analysis, structural equations, and causal inference with R.*  Cambridge University Press, Cambridge.  This third edition should appear in 2025 or 2026.  More detail concerning this package and its functions, as well as examples of the functions in this package are in that reference.  Note that the first two editions of this book did not make reference to this R package.
 
-The pwSEM package contains functions for conducting piecewise structural equation modelling (SEM).  There are eight  functions.  Each of them are described in this vignette.
+The pwSEM package contains functions for conducting piecewise structural equation modelling (SEM).  There are ten functions.  Each of them are described in this vignette.
 
 **pwSEM()** is the main program that is used to test piecewise structural equations (thus,the name pwSEM).
 
@@ -33,6 +33,10 @@ The pwSEM package contains functions for conducting piecewise structural equatio
 **MAG.to.DAG.in.pwSEM** is a function that converts a MAG into an equivalent DAG with latents.  A MAG is a mixed acyclic causal graph that can include double-headed arrows (X<->Y), representing an implicit common latent cause of both X and Y, or a line (X--Y) representing an implicit common latent child of X and Y. 
 
 **view.paths()** is a function allowing you to visually see how indirect effects along different paths vary given their original units when some structural equations are nonlinear and estimated using regression smoothers or are estimated using generalized linear (mixed) models with non-gaussian distributions.  You don't need this function if you are fitting linear structural equation models with gaussian distributions.
+
+**basiSet.DAG()** is function that outputs the union basis set of a MAG (mixed acyclic graph) involving either directed edges (X->Y) if X is a direct cause of Y or bi-directed edges (X<->Y) if X is not a cause of Y, Y is not a cause of X, but both X and Y share a common latent cause. It is easiest to create the MAG using the DAG() function of the ggm library and then modifying the binary output matrix by adding a value of 100 for each pair (row & column) of variables with a bi-directed edge.  Alternatively, a MAG with bi-directed edges can be created using the makeMG() function of the ggm library. 
+
+**get.AIC()** is a function that outputs the log-likelihood (LL), the number of free parameters that were estimated (K), the AIC value and the bias-corrected AIC (AICc).  You must input (1) a list (sem.model) containing the structural equations, each created using either the gam() or the gamm() functions of the mgcv package, (2) the DAG or MAG (MAG) and (3) the data frame (data) containing the observed data used in the calls to the models in the sem.model object. 
 
 **MCX2()** is a function that uses Monte Carlo methods to more accurately estimate the null probability of the Maximum Likelihood Chi-Squared fit statistic with small sample sizes.
 
@@ -250,7 +254,6 @@ drawGraph(mag)
 equivalent.dag<-MAG.to.DAG.in.pwSEM(MAG=mag,
        marginalized.latents=list(X2~~X4),conditioned.latents= NULL)
 drawGraph(equivalent.dag)
-
 ```
 
 The first argument (MAG) is the MAG, usually created by the makeMG function (make Mixed Graph) of the ggm library.  The second argument (marginalized.latents) is a list containing each pair of variables having a double-headed arrow (X<->Y, i.e. a free dependency).  The third argument (conditioned.latents) is also a list containing each pair of variables having a line (X--Y, i.e. a free dependency causes by selection bias in sampling).
@@ -288,11 +291,7 @@ Notice that the asymptotic probability, returned from  generalized.covariance(),
 
 ## The view.paths function
 
-This is a function, usually called after pwSEM(), to allow you to visually
-see how one variable causes another in the DAG  along all directed paths
-from the first to the second and to see how the 1st derivative (a path "coefficient" even though it is not necessarily constant) of this relationship
-changes as the "from" variable changes.  For linear relationships, this is a
-constant (the path coefficient).  Here is the view.paths() function:
+This is a function, usually called after pwSEM(), to allow you to visually see how one variable causes another in the DAG  along all directed paths from the first to the second and to see how the 1st derivative (a path "coefficient" even though it is not necessarily constant) of this relationship changes as the "from" variable changes.  For linear relationships, this is a constant (the path coefficient).  Here is the view.paths() function:
 
 view.paths(from,to,sem.functions,data,minimum.x=NULL,maximum.x=NULL,scale="response",return.values=FALSE,dag)
 
@@ -325,6 +324,21 @@ my.list<-list(mgcv::gam(X1~1,data=sim_poisson.no.nesting,family=gaussian),
            data=sim_poisson.no.nesting,use.permutations = FALSE)
 view.paths(from="X1",to="X4",sem.functions=out$sem.functions,data=
 sim_poisson.no.nesting,scale="response",dag=out$causal.graph)
+```
+
+## The basiSet.MAG function
+
+basiSet.MAG(cgraph)
+
+**arguments**
+
+*cgraph*: is a matrix, containing only 0, 1 or 100, that described the MAG. 
+```{r}
+library(ggm)
+mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
+mag
+drawGraph(mag)
+basiSet.MAG(cgraph=mag)
 ```
 
 ## The MCX2 function
