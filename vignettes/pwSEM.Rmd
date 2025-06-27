@@ -332,7 +332,7 @@ basiSet.MAG(cgraph)
 
 **arguments**
 
-*cgraph*: is a matrix, containing only 0, 1 or 100, that described the MAG. 
+*cgraph*: is a matrix, containing only 0, 1 or 100, that describes the MAG. This matrix is usually created using either DAG() or makeMG() from the ggm library.  A value of c_ij= 1 and c_ji=0 in the matrix means that the variable in row i causes the variable in column j (i.e. i->j).  A value of c_ij=c_ji=100 means that there is an implicit latent variable that is a common cause of both i and j (i.e. i<->j).  The function returns the union basis set of this MAG.
 ```{r}
 library(ggm)
 mag<-makeMG(dg=DAG(X2~X1,X3~X2,X4~X3),bg=UG(~X2*X4))
